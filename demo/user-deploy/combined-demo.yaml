@@ -1,0 +1,49 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: combined-demo-svc
+  labels:
+    app: combined-demo
+spec:
+  ports:
+    - name: filemanager
+      port: 80
+  selector:
+    app: combined-demo
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: combined-demo-depl
+  labels:
+    app: combined-demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: combined-demo
+  template:
+    metadata:
+      labels:
+        app: combined-demo
+    spec:
+      containers:
+      - name: combined-demo-filebrowser
+        image: hacdias/filebrowser
+        args: ["--port", "80", "--database", "/database.db", "--scope", "/srv", "--no-auth"]
+        ports:
+          - containerPort: 80
+        volumeMounts:
+          - name: cephfs-mount
+            mountPath: /srv/cephfs
+          - name: cvmfs-mount
+            mountPath: /srv/cms.cern.ch
+      volumes:
+        - name: cephfs-mount
+          persistentVolumeClaim:
+            claimName: csi-cephfs-pvc
+            readOnly: false
+        - name: cvmfs-mount
+          persistentVolumeClaim:
+            claimName: csi-cvmfs-pvc
+            readOnly: true

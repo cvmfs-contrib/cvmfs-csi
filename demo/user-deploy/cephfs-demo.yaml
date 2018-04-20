@@ -1,0 +1,43 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: cephfs-demo-svc
+  labels:
+    app: cephfs-demo
+spec:
+  ports:
+    - name: filemanager
+      port: 80
+  selector:
+    app: cephfs-demo
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cephfs-demo-depl
+  labels:
+    app: cephfs-demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cephfs-demo
+  template:
+    metadata:
+      labels:
+        app: cephfs-demo
+    spec:
+      containers:
+      - name: cephfs-demo-filebrowser
+        image: hacdias/filebrowser
+        args: ["--port", "80", "--database", "/database.db", "--scope", "/srv", "--no-auth"]
+        ports:
+          - containerPort: 80
+        volumeMounts:
+          - name: cephfs-mount
+            mountPath: /srv
+      volumes:
+        - name: cephfs-mount
+          persistentVolumeClaim:
+            claimName: csi-cephfs-pvc
+            readOnly: false
