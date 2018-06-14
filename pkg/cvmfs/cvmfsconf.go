@@ -18,11 +18,11 @@ const repoConf = `
 
 CVMFS_CACHE_BASE={{cacheBase .VolUuid}}
 
-{{if .Tag}}
-CVFMFS_REPOSITORY_TAG={{.Tag}}
-{{else if .Hash}}
+{{if .Hash}}
 CVMFS_ROOT_HASH={{.Hash}}
 CVMFS_AUTO_UPDATE=no
+{{else if .Tag}}
+CVFMFS_REPOSITORY_TAG={{.Tag}}
 {{end}}`
 
 var (

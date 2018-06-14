@@ -4,5 +4,5 @@ metadata:
   name: csi-cvmfs
 provisioner: csi-cvmfsplugin
 parameters:
-  repository: cms.cern.ch
+  repository: REPOSITORY-ADDRESS
 reclaimPolicy: Delete

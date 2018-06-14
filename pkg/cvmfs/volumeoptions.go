@@ -13,7 +13,7 @@ type volumeOptions struct {
 
 func validateNonEmptyField(field, fieldName string) error {
 	if field == "" {
-		return fmt.Errorf("Parameter '%s' cannot be empty", fieldName)
+		return fmt.Errorf("parameter '%s' cannot be empty", fieldName)
 	}
 
 	return nil
@@ -29,7 +29,7 @@ func (o *volumeOptions) validate() error {
 	}
 
 	if o.Hash != "" && o.Tag != "" {
-		return errors.New("Specifying both hash and tag is invalid")
+		return errors.New("specifying both hash and tag is not allowed")
 	}
 
 	return nil
@@ -37,7 +37,7 @@ func (o *volumeOptions) validate() error {
 
 func extractOption(dest *string, optionLabel string, options map[string]string) error {
 	if opt, ok := options[optionLabel]; !ok {
-		return errors.New("Missing required field " + optionLabel)
+		return errors.New("missing required field " + optionLabel)
 	} else {
 		*dest = opt
 		return nil
