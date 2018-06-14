@@ -14,7 +14,7 @@ type volumeIdentifier struct {
 	name, uuid, id string
 }
 
-func newVolumeIdentifier(volOptions *volumeOptions, req *csi.CreateVolumeRequest) *volumeIdentifier {
+func newVolumeIdentifier(req *csi.CreateVolumeRequest) *volumeIdentifier {
 	volId := volumeIdentifier{
 		name: req.GetName(),
 		uuid: uuid.NewUUID().String(),

@@ -8,7 +8,7 @@ spec:
      image: nginx
      imagePullPolicy: IfNotPresent
      volumeMounts:
-       - mountPath: /var/lib/www/html
+       - mountPath: /srv
          name: mypvc
   volumes:
    - name: mypvc

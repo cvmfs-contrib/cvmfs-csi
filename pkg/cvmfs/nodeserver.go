@@ -55,8 +55,6 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	// Configuration
-
 	targetPath := req.GetTargetPath()
 	volId := req.GetVolumeId()
 	volUuid := uuidFromVolumeId(volId)
@@ -69,10 +67,27 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 
 	defer pendingVols.unmark(volId)
 
+	// Configuration
+
 	volOptions, err := newVolumeOptions(req.GetVolumeAttributes())
 	if err != nil {
 		glog.Errorf("error reading volume options: %v", err)
 		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+
+	confData := cvmfsConfigData{
+		VolUuid: volUuid,
+		Tag:     volOptions.Tag,
+		Hash:    volOptions.Hash,
+	}
+
+	if err := confData.writeToFile(); err != nil {
+		glog.Errorf("failed to write cvmfs config for volume %s: %v", volId, err)
+		return nil, status.Errorf(codes.Internal, err.Error())
+	}
+
+	if err := createVolumeCache(volUuid); err != nil {
+		glog.Errorf("failed to create cache for volume %s: %v", volId, err)
 	}
 
 	if err = createMountPoint(targetPath); err != nil {
@@ -122,6 +137,15 @@ func (ns *nodeServer) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpu
 
 	if err := os.Remove(getVolumeRootPath(volUuid)); err != nil {
 		glog.Error("failed to remove root for volume %s: %v", volId, err)
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	if err := os.Remove(getConfigFilePath(volUuid)); err != nil {
+		glog.Warningf("cannot remove config for volume %s: %v", volId, err)
+	}
+
+	if err := purgeVolumeCache(volUuid); err != nil {
+		glog.Errorf("failed to delete cache for volume %s: %v", volId, err)
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
