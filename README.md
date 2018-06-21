@@ -5,7 +5,9 @@ Currently supports only Kubernetes 1.10+
 ## StorageClass parameters
 
 `repository`: mandatory, CVMFS repository address
+
 `tag`: optional, defaults to `trunk`
+
 `hash`: optional
 
 Specifying both `tag` and `hash` is not allowed.
