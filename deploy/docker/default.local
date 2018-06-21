@@ -1,0 +1,2 @@
+CVMFS_HTTP_PROXY="http://ca-proxy.cern.ch:3128"
+CVMFS_QUOTA_LIMIT=20000

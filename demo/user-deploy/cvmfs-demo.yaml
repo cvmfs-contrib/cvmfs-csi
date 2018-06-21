@@ -1,0 +1,43 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: cvmfs-demo-svc
+  labels:
+    app: cvmfs-demo
+spec:
+  ports:
+    - name: filemanager
+      port: 80
+  selector:
+    app: cvmfs-demo
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cvmfs-demo-depl
+  labels:
+    app: cvmfs-demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cvmfs-demo
+  template:
+    metadata:
+      labels:
+        app: cvmfs-demo
+    spec:
+      containers:
+      - name: cvmfs-demo-filebrowser
+        image: hacdias/filebrowser
+        args: ["--port", "80", "--database", "/database.db", "--scope", "/srv", "--no-auth"]
+        ports:
+          - containerPort: 80
+        volumeMounts:
+          - name: cvmfs-mount
+            mountPath: /srv
+      volumes:
+        - name: cvmfs-mount
+          persistentVolumeClaim:
+            claimName: csi-cvmfs-pvc
+            readOnly: true

@@ -1,0 +1,8 @@
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: csi-cvmfs
+provisioner: csi-cvmfsplugin
+parameters:
+  repository: REPOSITORY-ADDRESS
+reclaimPolicy: Delete
