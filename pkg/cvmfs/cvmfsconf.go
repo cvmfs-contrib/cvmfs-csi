@@ -13,7 +13,6 @@ const (
 
 const repoConf = `
 {{fileContents "/etc/cvmfs/default.conf"}}
-{{fileContents "/etc/cvmfs/domain.d/cern.ch.conf"}}
 {{fileContents "/etc/cvmfs/default.local"}}
 
 CVMFS_CACHE_BASE={{cacheBase .VolUuid}}
