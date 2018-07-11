@@ -3,7 +3,6 @@ package cvmfs
 import (
 	"context"
 	"errors"
-	"fmt"
 	"os"
 
 	"github.com/golang/glog"
@@ -58,14 +57,6 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 	targetPath := req.GetTargetPath()
 	volId := req.GetVolumeId()
 	volUuid := uuidFromVolumeId(volId)
-
-	if !pendingVols.markOrFail(volId) {
-		msg := fmt.Sprintf("cvmfs: NodePublishVolume for volume %s is pending", volId)
-		glog.Infoln(msg)
-		return nil, status.Error(codes.Aborted, msg)
-	}
-
-	defer pendingVols.unmark(volId)
 
 	// Configuration
 
