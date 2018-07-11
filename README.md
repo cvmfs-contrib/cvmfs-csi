@@ -1,6 +1,41 @@
 # CernVM-FS CSI driver
 
-Currently supports only Kubernetes 1.10+
+csi-cvmfs provides read-only mounting of CVMFS volumes in CSI-enabled container orchestrators.
+
+## Compiling
+
+The CSI CernVM-FS driver can be compiled in a form of a binary file or an image. When compiled as a binary, the resulting file gets stored in `_output` directory. When compiled as an image, it gets stored in local Docker image store.
+
+Building a binary file: `$ make cvmfsplugin`
+Building a Docker image: `$ make image`
+
+## Deployment
+
+**Kubernetes 1.10**
+
+Enable CSI in Kubernetes:
+
+- kube-apiserver must be launched with `--feature-gates=CSIPersistentVolume=true,MountPropagation=true` and `--runtime-config=storage.k8s.io/v1alpha1=true`
+- kube-controller-manager must be launched with `--feature-gates=CSIPersistentVolume=true`
+- kubelet must be launched with `--feature-gates=CSIPersistentVolume=true,MountPropagation=true`
+
+Deploy the external attacher and provisioner sidecar containers as StatefulSets:
+
+```bash
+$ kubectl create -f deploy/kubernetes/csi-cvmfsplugin-attacher-rbac.yaml
+$ kubectl create -f deploy/kubernetes/csi-cvmfsplugin-attacher.yaml
+```
+```bash
+$ kubectl create -f deploy/kubernetes/csi-cvmfsplugin-provisioner-rbac.yaml
+$ kubectl create -f deploy/kubernetes/csi-cvmfsplugin-provisioner.yaml
+```
+
+Deploy the driver-registrar sidecar container and the csi-cvmfsplugin as DaemonSet:
+
+```bash
+$ kubectl create -f deploy/kubernetes/csi-cvmfsplugin-rbac.yaml
+$ kubectl create -f deploy/kubernetes/csi-cvmfsplugin-.yaml
+```
 
 ## StorageClass parameters
 
@@ -11,20 +46,6 @@ Currently supports only Kubernetes 1.10+
 `hash`: optional
 
 Specifying both `tag` and `hash` is not allowed.
-
-## Deployment
-
-Deploy `external-attacher`, `external-provisioner`, `driver-registrar` sidecar containers and the `csi-cvmfsplugin`:
-
-```bash
-$ ./deploy/kubernetes/csi-deploy.sh
-```
-
-Create the csi-cvmfs storage class, PVC and a Pod:
-
-```bash
-$ ./deploy/kubernetes/user-deploy.sh
-```
 
 ### CVMFS configuration
 
