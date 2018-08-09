@@ -39,19 +39,20 @@ $ kubectl create -f deploy/kubernetes/csi-cvmfsplugin-.yaml
 
 ## StorageClass parameters
 
-`repository`: mandatory, CVMFS repository address
+Parameter | Required | Description
+--------- | -------- | -----------
+`repository` | yes | Name of the CVMFS repository
+`tag` | no | `CVMFS_REPOSITORY_TAG`. Defaults to `trunk`
+`hash` | no | `CVMFS_REPOSITORY_HASH`
+`proxy` | no | `CVMFS_HTTP_PROXY`. Defaults to the value sourced from `default.local`. See [CVMFS configuration](#cvmfs-configuration)
 
-`tag`: optional, defaults to `trunk`
-
-`hash`: optional
-
-Specifying both `tag` and `hash` is not allowed.
+Note that specifying both `tag` and `hash` is not allowed.
 
 ### CVMFS configuration
 
 By default, csi-cvmfs is distributed with `default.local` containing CERN defaults. You can override those at runtime by overwriting `/etc/cvmfs/default.local`, which is then sourced into any later CVMFS client configs used for mounting.
 
-**CVMFS configuration in Kubernetes**
+**CVMFS configuration in Kubernetes**  
 You can use Kubernetes [config map](https://kubernetes.io/docs/tasks/configure-pod-container/configure-pod-configmap/) to inject a custom `default.local` file.
 
 ```bash

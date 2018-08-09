@@ -17,10 +17,6 @@ type nodeServer struct {
 	*csicommon.DefaultNodeServer
 }
 
-var (
-	pendingVols = newVolumeSync()
-)
-
 func validateNodePublishVolumeRequest(req *csi.NodePublishVolumeRequest) error {
 	if req.GetVolumeCapability() == nil {
 		return errors.New("Volume capability missing in request")
@@ -70,6 +66,7 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 		VolUuid: volUuid,
 		Tag:     volOptions.Tag,
 		Hash:    volOptions.Hash,
+		Proxy:   volOptions.Proxy,
 	}
 
 	if err := confData.writeToFile(); err != nil {

@@ -9,6 +9,7 @@ type volumeOptions struct {
 	Repository string
 	Tag        string
 	Hash       string
+	Proxy      string
 }
 
 func validateNonEmptyField(field, fieldName string) error {
@@ -56,6 +57,7 @@ func newVolumeOptions(volOptions map[string]string) (*volumeOptions, error) {
 
 	extractOption(&opts.Tag, "tag", volOptions)
 	extractOption(&opts.Hash, "hash", volOptions)
+	extractOption(&opts.Proxy, "proxy", volOptions)
 
 	if err = opts.validate(); err != nil {
 		return nil, err
