@@ -3,7 +3,6 @@ package cvmfs
 import (
 	"context"
 	"errors"
-	"fmt"
 	"os"
 
 	"github.com/golang/glog"
@@ -17,10 +16,6 @@ import (
 type nodeServer struct {
 	*csicommon.DefaultNodeServer
 }
-
-var (
-	pendingVols = newVolumeSync()
-)
 
 func validateNodePublishVolumeRequest(req *csi.NodePublishVolumeRequest) error {
 	if req.GetVolumeCapability() == nil {
@@ -59,14 +54,6 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 	volId := req.GetVolumeId()
 	volUuid := uuidFromVolumeId(volId)
 
-	if !pendingVols.markOrFail(volId) {
-		msg := fmt.Sprintf("cvmfs: NodePublishVolume for volume %s is pending", volId)
-		glog.Infoln(msg)
-		return nil, status.Error(codes.Aborted, msg)
-	}
-
-	defer pendingVols.unmark(volId)
-
 	// Configuration
 
 	volOptions, err := newVolumeOptions(req.GetVolumeAttributes())
@@ -79,6 +66,7 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 		VolUuid: volUuid,
 		Tag:     volOptions.Tag,
 		Hash:    volOptions.Hash,
+		Proxy:   volOptions.Proxy,
 	}
 
 	if err := confData.writeToFile(); err != nil {

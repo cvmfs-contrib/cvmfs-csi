@@ -13,8 +13,11 @@ const (
 
 const repoConf = `
 {{fileContents "/etc/cvmfs/default.conf"}}
-{{fileContents "/etc/cvmfs/domain.d/cern.ch.conf"}}
 {{fileContents "/etc/cvmfs/default.local"}}
+
+{{if .Proxy}}
+CVMFS_HTTP_PROXY={{.Proxy}}
+{{end}}
 
 CVMFS_CACHE_BASE={{cacheBase .VolUuid}}
 
@@ -47,6 +50,7 @@ func init() {
 type cvmfsConfigData struct {
 	VolUuid   string
 	Tag, Hash string
+	Proxy     string
 }
 
 func (d *cvmfsConfigData) writeToFile() error {

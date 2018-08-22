@@ -13,7 +13,7 @@ cvmfsplugin:
 	if [ ! -d ./vendor ]; then dep ensure; fi
 	CGO_ENABLED=0 GOOS=linux go build -a -ldflags '-extldflags "-static"' -o  _output/$(NAME) ./cvmfs
 
-container: cvmfsplugin 
+image: cvmfsplugin 
 	cp _output/$(NAME) deploy/docker
 	docker build -t $(NAME):$(IMAGE_VERSION) deploy/docker
 
