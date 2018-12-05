@@ -11,7 +11,7 @@ spec:
       labels:
         app: csi-cvmfsplugin
     spec:
-      serviceAccount: csi-cvmfsplugin
+      serviceAccount: csi-nodeplugin
       hostNetwork: true
       containers:
         - name: driver-registrar
@@ -35,7 +35,7 @@ spec:
             capabilities:
               add: ["SYS_ADMIN"]
             allowPrivilegeEscalation: true
-          image: csi-cvmfsplugin:v0.2.0
+          image: csi-cvmfsplugin:v0.3.0
           args :
             - "--nodeid=$(NODE_ID)"
             - "--endpoint=$(CSI_ENDPOINT)"

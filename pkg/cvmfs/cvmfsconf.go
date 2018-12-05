@@ -19,7 +19,7 @@ const repoConf = `
 CVMFS_HTTP_PROXY={{.Proxy}}
 {{end}}
 
-CVMFS_CACHE_BASE={{cacheBase .VolUuid}}
+CVMFS_CACHE_BASE={{cacheBase .VolumeId}}
 
 {{if .Hash}}
 CVMFS_ROOT_HASH={{.Hash}}
@@ -48,13 +48,13 @@ func init() {
 }
 
 type cvmfsConfigData struct {
-	VolUuid   string
+	VolumeId  volumeID
 	Tag, Hash string
 	Proxy     string
 }
 
 func (d *cvmfsConfigData) writeToFile() error {
-	f, err := os.OpenFile(getConfigFilePath(d.VolUuid), os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0755)
+	f, err := os.OpenFile(getConfigFilePath(d.VolumeId), os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0755)
 	if err != nil {
 		if os.IsExist(err) {
 			return nil
@@ -67,6 +67,6 @@ func (d *cvmfsConfigData) writeToFile() error {
 	return repoConfTempl.Execute(f, d)
 }
 
-func getConfigFilePath(volUuid string) string {
-	return path.Join(cvmfsConfigRoot, "config-csi-"+volUuid)
+func getConfigFilePath(volId volumeID) string {
+	return path.Join(cvmfsConfigRoot, "config-csi-"+string(volId))
 }

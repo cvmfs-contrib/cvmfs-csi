@@ -11,12 +11,12 @@ import (
 )
 
 const (
-	cvmfsCacheRoot   = "/var/cache/cvmfs"
-	volumeRootPrefix = PluginFolder + "/controller/volumes/vol-"
+	cvmfsCacheRoot = "/var/cache/cvmfs"
 )
 
 var (
-	cvmfsUid = -1
+	cvmfsUid     = -1
+	dummyMounter = mount.New("") // Used in isMountPoint()
 )
 
 func init() {
@@ -28,20 +28,16 @@ func init() {
 	cvmfsUid, _ = strconv.Atoi(u.Uid)
 }
 
-func getVolumeCachePath(volUuid string) string {
-	return path.Join(cvmfsCacheRoot, "csi-"+volUuid)
+func getVolumeCachePath(volId volumeID) string {
+	return path.Join(cvmfsCacheRoot, "csi-"+string(volId))
 }
 
-func getVolumeSharedCachePath(volUuid string) string {
-	return path.Join(getVolumeCachePath(volUuid), "shared")
+func getVolumeSharedCachePath(volId volumeID) string {
+	return path.Join(getVolumeCachePath(volId), "shared")
 }
 
-func getVolumeRootPath(volUuid string) string {
-	return volumeRootPrefix + volUuid
-}
-
-func createVolumeCache(volUuid string) error {
-	cachePath := getVolumeCachePath(volUuid)
+func createVolumeCache(volId volumeID) error {
+	cachePath := getVolumeCachePath(volId)
 
 	if err := os.MkdirAll(cachePath, 0755); err != nil {
 		return err
@@ -54,30 +50,16 @@ func createVolumeCache(volUuid string) error {
 	return nil
 }
 
-func purgeVolumeCache(volUuid string) error {
-	return os.RemoveAll(getVolumeCachePath(volUuid))
+func purgeVolumeCache(volId volumeID) error {
+	return os.RemoveAll(getVolumeCachePath(volId))
 }
 
-func mountCvmfs(volOptions *volumeOptions, volUuid string) error {
+func mountCvmfs(volOptions *volumeOptions, volId volumeID, mountPoint string) error {
 	return execCommandAndValidate("mount",
 		"-t", "cvmfs",
-		volOptions.Repository, getVolumeRootPath(volUuid),
-		"-o", "config="+getConfigFilePath(volUuid),
+		volOptions.Repository, mountPoint,
+		"-o", "config="+getConfigFilePath(volId),
 	)
-}
-
-func mountVolume(mountPoint string, volOptions *volumeOptions, volUuid string) error {
-	volRoot := getVolumeRootPath(volUuid)
-
-	if err := createMountPoint(volRoot); err != nil {
-		return err
-	}
-
-	if err := mountCvmfs(volOptions, volUuid); err != nil {
-		return err
-	}
-
-	return bindMount(volRoot, mountPoint)
 }
 
 func bindMount(from, to string) error {
@@ -88,12 +70,8 @@ func bindMount(from, to string) error {
 	return execCommandAndValidate("mount", "-o", "remount,ro,bind", to)
 }
 
-func unmountVolume(mountPoint, volUuid string) error {
-	if err := execCommandAndValidate("umount", mountPoint); err != nil {
-		return err
-	}
-
-	return execCommandAndValidate("umount", getVolumeRootPath(volUuid))
+func unmountVolume(mountPoint string) error {
+	return execCommandAndValidate("umount", mountPoint)
 }
 
 func createMountPoint(p string) error {
@@ -101,7 +79,7 @@ func createMountPoint(p string) error {
 }
 
 func isMountPoint(p string) (bool, error) {
-	notMnt, err := mount.New("").IsLikelyNotMountPoint(p)
+	notMnt, err := dummyMounter.IsLikelyNotMountPoint(p)
 	if err != nil {
 		return false, err
 	}
