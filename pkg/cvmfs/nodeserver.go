@@ -8,7 +8,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/container-storage-interface/spec/lib/go/csi/v0"
+	"github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/kubernetes-csi/drivers/pkg/csi-common"
 )
 
@@ -27,7 +27,7 @@ func (ns *nodeServer) NodeStageVolume(ctx context.Context, req *csi.NodeStageVol
 	stagingTargetPath := req.GetStagingTargetPath()
 	volId := volumeID(req.GetVolumeId())
 
-	volOptions, err := newVolumeOptions(req.GetVolumeAttributes())
+	volOptions, err := newVolumeOptions(req.GetVolumeContext())
 	if err != nil {
 		glog.Errorf("invalid volume attributes for volume %s: %v", volId, err)
 		return nil, status.Error(codes.InvalidArgument, err.Error())

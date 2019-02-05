@@ -45,8 +45,8 @@ build image:
     - cp _output/csi-cvmfsplugin deploy/docker
     - yum install -y make
     - docker login -u gitlab-ci-token -p $CI_BUILD_TOKEN gitlab-registry.cern.ch
-    - docker build -t gitlab-registry.cern.ch/$CI_PROJECT_NAMESPACE/$CI_PROJECT_NAME:$CI_COMMIT_SHA deploy/docker
-    - docker push gitlab-registry.cern.ch/$CI_PROJECT_NAMESPACE/$CI_PROJECT_NAME:$CI_COMMIT_SHA
+    - docker build -t gitlab-registry.cern.ch/cloud-infrastructure/cvmfs-csi/cvmfsplugin:$CI_COMMIT_SHA deploy/docker
+    - docker push gitlab-registry.cern.ch/cloud-infrastructure/cvmfs-csi/cvmfsplugin:$CI_COMMIT_SHA
   dependencies:
     - build
   except:
@@ -59,7 +59,7 @@ test k8s:
   stage: test
   image: gitlab-registry.cern.ch/cloud/ciadm
   script:
-    - openstack coe cluster create $CLUSTER_NAME --cluster-template kubernetes-1.13.3-1 --keypair lxplus --node-count 1 --master-count 1 --flavor m2.small
+    - openstack coe cluster create $CLUSTER_NAME --cluster-template kubernetes-preview --keypair lxplus --node-count 1 --master-count 1 --flavor m2.small --labels influx_grafana_dashboard_enabled=True --labels cephfs_csi_enabled=True --labels manila_enabled=True --labels kube_tag=v1.14.1 --labels kube_csi_enabled=True --labels kube_csi_version=cern-csi-1.0-1 --labels heat_container_agent_tag=stein-dev-1 --labels cgroup_driver=cgroupfs --labels container_infra_prefix=gitlab-registry.cern.ch/cloud/atomic-system-containers/ --labels flannel_backend=vxlan --labels cvmfs_csi_version=$CI_COMMIT_SHA --labels admission_control_list=NamespaceLifecycle,LimitRanger,ServiceAccount,DefaultStorageClass,DefaultTolerationSeconds,MutatingAdmissionWebhook,ValidatingAdmissionWebhook,ResourceQuota,Priority --labels ingress_controller=traefik --labels manila_version=v0.3.0 --labels cvmfs_csi_enabled=True --labels cvmfs_tag=qa --labels cephfs_csi_version=cern-csi-1.0-1
     - sleep 10
     - STATUS=$(openstack coe cluster show $CLUSTER_NAME -c status | grep 'status ' | awk '{print $4}')
     - while [ "$STATUS" != "CREATE_COMPLETE" ] && [ "$STATUS" != "CREATE_FAILED" ]; do STATUS=$(openstack coe cluster show $CLUSTER_NAME -c status | grep 'status ' | awk '{print $4}'); done
@@ -67,7 +67,7 @@ test k8s:
     - openstack coe cluster config $CLUSTER_NAME
     - export KUBECONFIG=config
     - kubectl create --validate=false -f magnum-cvmfs.yaml
-    - kubectl rollout status deployment/cvmfs
+    - until kubectl rollout status deployment/cvmfs; do kubectl get all; kubectl describe pvc; done
     - POD=$(kubectl get pod | grep cvmfs | awk '{print $1}')
     - kubectl exec $POD -c atlas cat /cvmfs/atlas.cern.ch/repo/ATLASLocalRootBase/README.INSTALL
     - kubectl exec $POD -c cms cat /cvmfs/cms.cern.ch/README
@@ -93,9 +93,9 @@ deploy tag:
   stage: deploy
   image: gitlab-registry.cern.ch/cloud/ciadm
   script:
-    - docker pull gitlab-registry.cern.ch/$CI_PROJECT_NAMESPACE/$CI_PROJECT_NAME:$CI_COMMIT_SHA
-    - docker tag gitlab-registry.cern.ch/$CI_PROJECT_NAMESPACE/$CI_PROJECT_NAME:$CI_COMMIT_SHA gitlab-registry.cern.ch/$CI_PROJECT_NAMESPACE/$CI_PROJECT_NAME:$CI_COMMIT_TAG
-    - docker push gitlab-registry.cern.ch/$CI_PROJECT_NAMESPACE/$CI_PROJECT_NAME:$CI_COMMIT_TAG
+    - docker pull gitlab-registry.cern.ch/cloud-infrastructure/cvmfs-csi/cvmfsplugin:$CI_COMMIT_SHA
+    - docker tag gitlab-registry.cern.ch/cloud-infrastructure/cvmfs-csi/cvmfsplugin:$CI_COMMIT_SHA gitlab-registry.cern.ch/cloud-infrastructure/cvmfs-csi/cvmfsplugin:$CI_COMMIT_TAG
+    - docker push gitlab-registry.cern.ch/cloud-infrastructure/cvmfs-csi/cvmfsplugin:$CI_COMMIT_TAG
   only:
     - tags
   tags:

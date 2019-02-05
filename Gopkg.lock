@@ -2,55 +2,58 @@
 
 
 [[projects]]
-  digest = "1:a54dc69ec3668e0e57ad159a0a8c0ce1ec571174bb4eb6b3915833a8c21d40f3"
   name = "github.com/container-storage-interface/spec"
-  packages = ["lib/go/csi/v0"]
-  pruneopts = "UT"
-  revision = "2178fdeea87f1150a17a63252eee28d4d8141f72"
-  version = "v0.3.0"
+  packages = ["lib/go/csi"]
+  revision = "ed0bb0e1557548aa028307f48728767cfe8f6345"
+  version = "v1.0.0"
 
 [[projects]]
   branch = "master"
-  digest = "1:1ba1d79f2810270045c328ae5d674321db34e3aae468eb4233883b473c5c0467"
   name = "github.com/golang/glog"
   packages = ["."]
-  pruneopts = "UT"
   revision = "23def4e6c14b4da8ac2ed8007337bc5eb5007998"
 
 [[projects]]
-  digest = "1:8f0705fa33e8957018611cc81c65cb373b626c092d39931bb86882489fc4c3f4"
   name = "github.com/golang/protobuf"
   packages = [
+    "descriptor",
     "proto",
+    "protoc-gen-go/descriptor",
     "ptypes",
     "ptypes/any",
     "ptypes/duration",
     "ptypes/timestamp",
-    "ptypes/wrappers",
+    "ptypes/wrappers"
   ]
-  pruneopts = "UT"
   revision = "aa810b61a9c79d51363740d207bb46cf8e620ed5"
   version = "v1.2.0"
 
 [[projects]]
-  branch = "master"
-  digest = "1:c486ed8ec89f0702d16043caada5a9ad0be2f639ca33621665d2614582d32154"
+  name = "github.com/google/uuid"
+  packages = ["."]
+  revision = "d460ce9f8df2e77fb1ba55ca87fafed96c607494"
+  version = "v1.0.0"
+
+[[projects]]
+  name = "github.com/kubernetes-csi/csi-lib-utils"
+  packages = ["protosanitizer"]
+  revision = "5853414e1d4771302e0df10d1870c444c2135799"
+  version = "v0.2.0"
+
+[[projects]]
   name = "github.com/kubernetes-csi/drivers"
   packages = ["pkg/csi-common"]
-  pruneopts = "UT"
-  revision = "5fa2f162efc3c2e72c423cc355164b9621f1dda8"
+  revision = "8a4ae6feb47cf7ae29b3dab9e3dc3d1ff796fbf2"
+  version = "v1.0.2"
 
 [[projects]]
-  digest = "1:361de06aa7ae272616cbe71c3994a654cc6316324e30998e650f7765b20c5b33"
   name = "github.com/pborman/uuid"
   packages = ["."]
-  pruneopts = "UT"
-  revision = "e790cca94e6cc75c7064b1332e63811d4aae1a53"
-  version = "v1.1"
+  revision = "adf5a7427709b9deb95d29d3fa8a2bf9cfd388f1"
+  version = "v1.2"
 
 [[projects]]
   branch = "master"
-  digest = "1:deafe4ab271911fec7de5b693d7faae3f38796d9eb8622e2b9e7df42bb3dfea9"
   name = "golang.org/x/net"
   packages = [
     "context",
@@ -59,21 +62,17 @@
     "http2/hpack",
     "idna",
     "internal/timeseries",
-    "trace",
+    "trace"
   ]
-  pruneopts = "UT"
-  revision = "8a410e7b638dca158bf9e766925842f6651ff828"
+  revision = "88d92db4c548972d942ac2a3531a8a9a34c82ca6"
 
 [[projects]]
   branch = "master"
-  digest = "1:4b487c782bc804d994e91adbd3d2a8a77a482671efd87b2fde0805adb01a39c0"
   name = "golang.org/x/sys"
   packages = ["unix"]
-  pruneopts = "UT"
-  revision = "d99a578cf41bfccdeaf48b0845c823a4b8b0ad5e"
+  revision = "66b7b1311ac80bbafcd2daeef9a5e6e2cd1e2399"
 
 [[projects]]
-  digest = "1:a2ab62866c75542dd18d2b069fec854577a20211d7c0ea6ae746072a1dccdd18"
   name = "golang.org/x/text"
   packages = [
     "collate",
@@ -89,39 +88,40 @@
     "unicode/bidi",
     "unicode/cldr",
     "unicode/norm",
-    "unicode/rangetable",
+    "unicode/rangetable"
   ]
-  pruneopts = "UT"
   revision = "f21a4dfb5e38f5895301dc265a8def02365cc3d0"
   version = "v0.3.0"
 
 [[projects]]
   branch = "master"
-  digest = "1:077c1c599507b3b3e9156d17d36e1e61928ee9b53a5b420f10f28ebd4a0b275c"
   name = "google.golang.org/genproto"
   packages = ["googleapis/rpc/status"]
-  pruneopts = "UT"
-  revision = "c66870c02cf823ceb633bcd05be3c7cda29976f4"
+  revision = "b5d43981345bdb2c233eb4bf3277847b48c6fdc6"
 
 [[projects]]
-  digest = "1:3dd7996ce6bf52dec6a2f69fa43e7c4cefea1d4dfa3c8ab7a5f8a9f7434e239d"
   name = "google.golang.org/grpc"
   packages = [
     ".",
     "balancer",
     "balancer/base",
     "balancer/roundrobin",
+    "binarylog/grpc_binarylog_v1",
     "codes",
     "connectivity",
     "credentials",
+    "credentials/internal",
     "encoding",
     "encoding/proto",
     "grpclog",
     "internal",
     "internal/backoff",
+    "internal/binarylog",
     "internal/channelz",
     "internal/envconfig",
     "internal/grpcrand",
+    "internal/grpcsync",
+    "internal/syscall",
     "internal/transport",
     "keepalive",
     "metadata",
@@ -132,52 +132,43 @@
     "resolver/passthrough",
     "stats",
     "status",
-    "tap",
+    "tap"
   ]
-  pruneopts = "UT"
-  revision = "32fb0ac620c32ba40a4626ddf94d90d12cce3455"
-  version = "v1.14.0"
+  revision = "a02b0774206b209466313a0b525d2c738fe407eb"
+  version = "v1.18.0"
 
 [[projects]]
-  branch = "master"
-  digest = "1:f5fb6c4c9e14909a66efe7d3e49403234cd52523eb3997c5753a880635e8be2d"
   name = "k8s.io/apimachinery"
   packages = ["pkg/util/sets"]
-  pruneopts = "UT"
-  revision = "017bf4f8f5884203a401400e511f4c8fc2eded21"
+  revision = "572dfc7bdfcb4531361a17d27b92851f59acf0dc"
+  version = "kubernetes-1.13.3"
 
 [[projects]]
-  digest = "1:8f25a47e55a83bfdbb0301fb3908b9a2b0071a067f2eaef6b58d91f14543a793"
+  name = "k8s.io/klog"
+  packages = ["."]
+  revision = "a5bc97fbc634d635061f3146511332c7e313a55a"
+  version = "v0.1.0"
+
+[[projects]]
   name = "k8s.io/kubernetes"
   packages = [
     "pkg/util/file",
     "pkg/util/io",
     "pkg/util/mount",
-    "pkg/util/nsenter",
+    "pkg/util/nsenter"
   ]
-  pruneopts = "UT"
-  revision = "bb9ffb1654d4a729bb4cec18ff088eacc153c239"
-  version = "v1.11.2"
+  revision = "721bfa751924da8d1680787490c54b9179b1fed0"
+  version = "v1.13.3"
 
 [[projects]]
   branch = "master"
-  digest = "1:867d98a27033c52150eb4c01ca0f9be938d3010e9a4909ea3a881a83c3ac1b3f"
   name = "k8s.io/utils"
   packages = ["exec"]
-  pruneopts = "UT"
-  revision = "982821ea41da7e7c15f3d3738921eb2e7e241ccd"
+  revision = "1bd4f387aa67de2eec07a362c10bc8bd7fe74237"
 
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  input-imports = [
-    "github.com/container-storage-interface/spec/lib/go/csi/v0",
-    "github.com/golang/glog",
-    "github.com/kubernetes-csi/drivers/pkg/csi-common",
-    "github.com/pborman/uuid",
-    "google.golang.org/grpc/codes",
-    "google.golang.org/grpc/status",
-    "k8s.io/kubernetes/pkg/util/mount",
-  ]
+  inputs-digest = "9bf260d1bb4a76bf7e6e27e56f45242ec98b69fb0ce879808f2a913c1bbd9524"
   solver-name = "gps-cdcl"
   solver-version = 1

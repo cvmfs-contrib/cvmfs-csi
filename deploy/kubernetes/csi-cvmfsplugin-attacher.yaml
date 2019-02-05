@@ -2,6 +2,7 @@ kind: Service
 apiVersion: v1
 metadata:
   name: csi-cvmfsplugin-attacher
+  namespace: cvmfs
   labels:
     app: csi-cvmfsplugin-attacher
 spec:
@@ -16,6 +17,7 @@ kind: StatefulSet
 apiVersion: apps/v1beta1
 metadata:
   name: csi-cvmfsplugin-attacher
+  namespace: cvmfs
 spec:
   serviceName: "csi-cvmfsplugin-attacher"
   replicas: 1
@@ -24,10 +26,10 @@ spec:
       labels:
         app: csi-cvmfsplugin-attacher
     spec:
-      serviceAccount: csi-attacher
+      serviceAccount: cvmfs-attacher
       containers:
         - name: csi-attacher
-          image: quay.io/k8scsi/csi-attacher:v0.3.0
+          image: quay.io/k8scsi/csi-attacher:v1.0.1
           args:
             - "--v=5"
             - "--csi-address=$(ADDRESS)"

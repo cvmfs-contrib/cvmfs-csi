@@ -1,79 +1,70 @@
 package cvmfs
 
 import (
+	"github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/golang/glog"
-
-	"github.com/container-storage-interface/spec/lib/go/csi/v0"
 	"github.com/kubernetes-csi/drivers/pkg/csi-common"
 )
 
 const (
-	PluginFolder = "/var/lib/kubelet/plugins/csi-cvmfsplugin"
-	Version      = "0.3.0"
+	PluginFolder = "/var/lib/kubelet/plugins/cvmfs.csi.cern.ch"
+	driverName = "cvmfs.csi.cern.ch"
+	version = "1.0.1"
 )
-
-type cvmfsDriver struct {
-	driver *csicommon.CSIDriver
-
-	is *identityServer
-	cs *controllerServer
-	ns *nodeServer
-
-	caps   []*csi.VolumeCapability_AccessMode
-	cscaps []*csi.ControllerServiceCapability
-}
 
 var (
 	driver *cvmfsDriver
 )
 
-func NewCvmfsDriver() *cvmfsDriver {
-	return &cvmfsDriver{}
+type cvmfsDriver struct {
+	driver *csicommon.CSIDriver
+	endpoint  string
+
+	is *identityServer
+	ns  *nodeServer
+	cs  *controllerServer
+
+	caps   []*csi.VolumeCapability_AccessMode
+	cscaps []*csi.ControllerServiceCapability
 }
 
-func NewIdentityServer(d *csicommon.CSIDriver) *identityServer {
-	return &identityServer{
-		DefaultIdentityServer: csicommon.NewDefaultIdentityServer(d),
-	}
-}
+func NewDriver(nodeID, endpoint string) *cvmfsDriver {
+	glog.Infof("Driver: %v version: %v", driverName, version)
 
-func NewControllerServer(d *csicommon.CSIDriver) *controllerServer {
-	return &controllerServer{
-		DefaultControllerServer: csicommon.NewDefaultControllerServer(d),
-	}
-}
+	d := &cvmfsDriver{}
 
-func NewNodeServer(d *csicommon.CSIDriver) *nodeServer {
-	return &nodeServer{
-		DefaultNodeServer: csicommon.NewDefaultNodeServer(d),
-	}
-}
+	d.endpoint = endpoint
 
-func (fs *cvmfsDriver) Run(driverName, nodeId, endpoint string) {
-	glog.Infof("Driver: %v version: %v", driverName, Version)
-
-	// Initialize default library driver
-
-	fs.driver = csicommon.NewCSIDriver(driverName, Version, nodeId)
-	if fs.driver == nil {
-		glog.Fatalln("Failed to initialize CSI driver")
-	}
-
-	fs.driver.AddControllerServiceCapabilities([]csi.ControllerServiceCapability_RPC_Type{
-		csi.ControllerServiceCapability_RPC_CREATE_DELETE_VOLUME,
-	})
-
-	fs.driver.AddVolumeCapabilityAccessModes([]csi.VolumeCapability_AccessMode_Mode{
-		csi.VolumeCapability_AccessMode_MULTI_NODE_READER_ONLY,
-	})
+	csiDriver := csicommon.NewCSIDriver(driverName, version, nodeID)
+	csiDriver.AddVolumeCapabilityAccessModes([]csi.VolumeCapability_AccessMode_Mode{csi.VolumeCapability_AccessMode_MULTI_NODE_READER_ONLY})
+	csiDriver.AddControllerServiceCapabilities([]csi.ControllerServiceCapability_RPC_Type{csi.ControllerServiceCapability_RPC_CREATE_DELETE_VOLUME})
 
 	// Create gRPC servers
 
-	fs.is = NewIdentityServer(fs.driver)
-	fs.ns = NewNodeServer(fs.driver)
-	fs.cs = NewControllerServer(fs.driver)
+	d.driver = csiDriver
 
-	server := csicommon.NewNonBlockingGRPCServer()
-	server.Start(endpoint, fs.is, fs.cs, fs.ns)
-	server.Wait()
+	return d
+}
+
+func NewNodeServer(d *cvmfsDriver) *nodeServer {
+	return &nodeServer{
+		DefaultNodeServer: csicommon.NewDefaultNodeServer(d.driver),
+	}
+}
+
+func NewControllerServer(d *cvmfsDriver) *controllerServer {
+	return &controllerServer{
+		DefaultControllerServer: csicommon.NewDefaultControllerServer(d.driver),
+	}
+}
+
+func NewIdentityServer(d *cvmfsDriver) *identityServer {
+	return &identityServer{
+		DefaultIdentityServer: csicommon.NewDefaultIdentityServer(d.driver),
+	}
+}
+
+func (d *cvmfsDriver) Run() {
+
+	csicommon.RunControllerandNodePublishServer(d.endpoint, d.driver, NewControllerServer(d), NewNodeServer(d))
 }

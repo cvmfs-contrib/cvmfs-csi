@@ -1,7 +1,7 @@
 .PHONY: all cvmfsplugin
 
 NAME=csi-cvmfsplugin
-IMAGE_VERSION=v0.3.0
+IMAGE_VERSION=v1.0.1
 
 all: cvmfsplugin
 
@@ -10,7 +10,8 @@ test:
 	go vet gitlab.cern.ch/cloud-infrastructure/cvmfs-csi/pkg/...
 
 cvmfsplugin:
-	go mod tidy
+	go version
+	go mod tidy -v
 	CGO_ENABLED=0 GOOS=linux go build -a -ldflags '-extldflags "-static"' -o  _output/$(NAME) ./cvmfs
 
 image:

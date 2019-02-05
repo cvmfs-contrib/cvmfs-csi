@@ -7,7 +7,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/container-storage-interface/spec/lib/go/csi/v0"
+	"github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/kubernetes-csi/drivers/pkg/csi-common"
 )
 
@@ -27,8 +27,8 @@ func (cs *controllerServer) CreateVolume(ctx context.Context, req *csi.CreateVol
 
 	return &csi.CreateVolumeResponse{
 		Volume: &csi.Volume{
-			Id:            string(volId),
-			Attributes:    req.GetParameters(),
+			VolumeId:            string(volId),
+			VolumeContext:    req.GetParameters(),
 			CapacityBytes: req.GetCapacityRange().GetRequiredBytes(),
 		},
 	}, nil
@@ -45,15 +45,30 @@ func (cs *controllerServer) DeleteVolume(ctx context.Context, req *csi.DeleteVol
 	return &csi.DeleteVolumeResponse{}, nil
 }
 
+
+
+
 func (cs *controllerServer) ValidateVolumeCapabilities(
 	ctx context.Context,
 	req *csi.ValidateVolumeCapabilitiesRequest,
 ) (*csi.ValidateVolumeCapabilitiesResponse, error) {
 	for _, c := range req.GetVolumeCapabilities() {
 		if c.AccessMode.GetMode() != csi.VolumeCapability_AccessMode_MULTI_NODE_READER_ONLY || c.GetBlock() != nil {
-			return &csi.ValidateVolumeCapabilitiesResponse{Supported: false}, nil
+			return nil, status.Error(codes.Unimplemented, "")
 		}
 	}
 
-	return &csi.ValidateVolumeCapabilitiesResponse{Supported: true}, nil
+	supportedAccessMode := &csi.VolumeCapability_AccessMode{
+		Mode: csi.VolumeCapability_AccessMode_MULTI_NODE_READER_ONLY,
+	}
+
+	return &csi.ValidateVolumeCapabilitiesResponse{
+		Confirmed: &csi.ValidateVolumeCapabilitiesResponse_Confirmed{
+			VolumeCapabilities: []*csi.VolumeCapability{
+				{
+					AccessMode: supportedAccessMode,
+				},
+			},
+		},
+	}, nil
 }

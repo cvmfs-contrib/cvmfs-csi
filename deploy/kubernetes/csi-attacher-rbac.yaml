@@ -1,13 +1,14 @@
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: csi-attacher
+  name: cvmfs-attacher
+  namespace: cvmfs
 
 ---
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: external-attacher-runner
+  name: cvmfs-external-attacher-runner
 rules:
   - apiGroups: [""]
     resources: ["events"]
@@ -26,12 +27,13 @@ rules:
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: csi-attacher-role
+  name: cvmfs-attacher-role
+  namespace: cvmfs
 subjects:
   - kind: ServiceAccount
-    name: csi-attacher
-    namespace: default
+    name: cvmfs-attacher
+    namespace: cvmfs
 roleRef:
   kind: ClusterRole
-  name: external-attacher-runner
+  name: cvmfs-external-attacher-runner
   apiGroup: rbac.authorization.k8s.io
