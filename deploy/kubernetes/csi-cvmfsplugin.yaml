@@ -12,7 +12,7 @@ spec:
       labels:
         app: csi-cvmfsplugin
     spec:
-      serviceAccount: csi-nodeplugin
+      serviceAccount: cvmfs-nodeplugin
       hostNetwork: true
       containers:
         - name: driver-registrar

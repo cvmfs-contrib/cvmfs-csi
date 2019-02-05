@@ -26,7 +26,7 @@ spec:
       labels:
         app: csi-cvmfsplugin-attacher
     spec:
-      serviceAccount: csi-attacher
+      serviceAccount: cvmfs-attacher
       containers:
         - name: csi-attacher
           image: quay.io/k8scsi/csi-attacher:v0.3.0
