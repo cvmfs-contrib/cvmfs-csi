@@ -1,0 +1,23 @@
+image: gitlab-registry.nautilus.optiputer.net/prp/golang-docker-gitlabci
+
+before_script:
+  - docker login -u gitlab-ci-token -p $CI_BUILD_TOKEN gitlab-registry.nautilus.optiputer.net
+  - go get -u github.com/golang/dep/cmd/dep
+
+stages:
+  - build-and-push
+
+build-and-push:
+  stage: build-and-push
+  tags:
+  - build-as-docker
+  script:
+  - mkdir -p /go/src/gitlab.nautilus.optiputer.net/prp
+  - ln -s ${CI_PROJECT_DIR} /go/src/gitlab.nautilus.optiputer.net/${CI_PROJECT_NAMESPACE}/${CI_PROJECT_NAME}
+  - cd /go/src/gitlab.nautilus.optiputer.net/${CI_PROJECT_NAMESPACE}/${CI_PROJECT_NAME}
+  - dep ensure
+  - CGO_ENABLED=0 GOOS=linux go build -a -ldflags '-extldflags "-static"' -o  _output/csi-cvmfsplugin ./cvmfs
+  - cp _output/csi-cvmfsplugin deploy/docker
+  - docker build -t gitlab-registry.nautilus.optiputer.net/${CI_PROJECT_NAMESPACE}/${CI_PROJECT_NAME}:${CI_COMMIT_SHA:0:8} deploy/docker
+  - docker tag gitlab-registry.nautilus.optiputer.net/${CI_PROJECT_NAMESPACE}/${CI_PROJECT_NAME}:${CI_COMMIT_SHA:0:8} gitlab-registry.nautilus.optiputer.net/${CI_PROJECT_NAMESPACE}/${CI_PROJECT_NAME}:latest
+  - docker push gitlab-registry.nautilus.optiputer.net/${CI_PROJECT_NAMESPACE}/${CI_PROJECT_NAME}

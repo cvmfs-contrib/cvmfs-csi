@@ -35,4 +35,17 @@ roleRef:
   kind: ClusterRole
   name: cvmfs-nodeplugin
   apiGroup: rbac.authorization.k8s.io
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: cvmfs-nodeplugin-psp
+subjects:
+  - kind: ServiceAccount
+    name: cvmfs-nodeplugin
+    namespace: cvmfs
+roleRef:
+  kind: ClusterRole
+  name: psp:privileged-user
+  apiGroup: rbac.authorization.k8s.io
   
