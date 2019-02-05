@@ -2,6 +2,7 @@ kind: Service
 apiVersion: v1
 metadata:
   name: csi-cvmfsplugin-provisioner
+  namespace: cvmfs
   labels:
     app: csi-cvmfsplugin-provisioner
 spec:
@@ -16,6 +17,7 @@ kind: StatefulSet
 apiVersion: apps/v1beta1
 metadata:
   name: csi-cvmfsplugin-provisioner
+  namespace: cvmfs
 spec:
   serviceName: "csi-cvmfsplugin-provisioner"
   replicas: 1
