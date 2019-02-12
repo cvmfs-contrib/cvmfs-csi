@@ -12,9 +12,9 @@ build-and-push:
   tags:
   - build-as-docker
   script:
-  - mkdir -p /go/src/gitlab.nautilus.optiputer.net/prp
-  - ln -s ${CI_PROJECT_DIR} /go/src/gitlab.nautilus.optiputer.net/${CI_PROJECT_NAMESPACE}/${CI_PROJECT_NAME}
-  - cd /go/src/gitlab.nautilus.optiputer.net/${CI_PROJECT_NAMESPACE}/${CI_PROJECT_NAME}
+  - mkdir -p /go/src/gitlab.cern.ch/cloud-infrastructure/cvmfs-csi
+  - ln -s ${CI_PROJECT_DIR} /go/src/gitlab.cern.ch/cloud-infrastructure/cvmfs-csi
+  - cd /go/src/gitlab.cern.ch/cloud-infrastructure/cvmfs-csi
   - dep ensure
   - CGO_ENABLED=0 GOOS=linux go build -a -ldflags '-extldflags "-static"' -o  _output/csi-cvmfsplugin ./cvmfs
   - cp _output/csi-cvmfsplugin deploy/docker
