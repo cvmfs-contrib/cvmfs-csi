@@ -12,7 +12,7 @@ build-and-push:
   tags:
   - build-as-docker
   script:
-  - mkdir -p /go/src/gitlab.cern.ch/cloud-infrastructure/cvmfs-csi
+  - mkdir -p /go/src/gitlab.cern.ch/cloud-infrastructure
   - ln -s ${CI_PROJECT_DIR} /go/src/gitlab.cern.ch/cloud-infrastructure/cvmfs-csi
   - cd /go/src/gitlab.cern.ch/cloud-infrastructure/cvmfs-csi
   - ls
