@@ -3,7 +3,7 @@
   version = "v1.0.0"
 
 [[constraint]]
-  branch = "v1.0.2"
+  version = "v1.0.2"
   name = "github.com/kubernetes-csi/drivers"
 
 [[constraint]]
