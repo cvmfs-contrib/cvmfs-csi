@@ -9,7 +9,7 @@ import (
 
 const (
 	PluginFolder = "/var/lib/kubelet/plugins/csi-cvmfsplugin"
-	Version      = "0.3.0"
+	Version      = "1.0.1"
 )
 
 type cvmfsDriver struct {
