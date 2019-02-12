@@ -15,6 +15,7 @@ build-and-push:
   - mkdir -p /go/src/gitlab.cern.ch/cloud-infrastructure/cvmfs-csi
   - ln -s ${CI_PROJECT_DIR} /go/src/gitlab.cern.ch/cloud-infrastructure/cvmfs-csi
   - cd /go/src/gitlab.cern.ch/cloud-infrastructure/cvmfs-csi
+  - ls
   - dep ensure
   - CGO_ENABLED=0 GOOS=linux go build -a -ldflags '-extldflags "-static"' -o  _output/csi-cvmfsplugin ./cvmfs
   - cp _output/csi-cvmfsplugin deploy/docker
