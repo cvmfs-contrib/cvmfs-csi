@@ -27,6 +27,27 @@ type identityServer struct {
 	*csicommon.DefaultIdentityServer
 }
 
+func (ids *DefaultIdentityServer) GetPluginInfo(ctx context.Context, req *csi.GetPluginInfoRequest) (*csi.GetPluginInfoResponse, error) {
+	glog.V(5).Infof("Using default GetPluginInfo")
+
+	if ids.Driver.name == "" {
+		return nil, status.Error(codes.Unavailable, "Driver name not configured")
+	}
+
+	if ids.Driver.version == "" {
+		return nil, status.Error(codes.Unavailable, "Driver is missing version")
+	}
+
+	return &csi.GetPluginInfoResponse{
+		Name:          ids.Driver.name,
+		VendorVersion: ids.Driver.version,
+	}, nil
+}
+
+func (ids *DefaultIdentityServer) Probe(ctx context.Context, req *csi.ProbeRequest) (*csi.ProbeResponse, error) {
+	return &csi.ProbeResponse{}, nil
+}
+
 func (is *identityServer) GetPluginCapabilities(ctx context.Context, req *csi.GetPluginCapabilitiesRequest) (*csi.GetPluginCapabilitiesResponse, error) {
 	return &csi.GetPluginCapabilitiesResponse{
 		Capabilities: []*csi.PluginCapability{
