@@ -15,7 +15,7 @@ type cvmfsDriver struct {
 	driver *csicommon.CSIDriver
 	endpoint  string
 
-	ids *identityServer
+	is *identityServer
 	ns  *nodeServer
 	cs  *controllerServer
 
@@ -43,7 +43,10 @@ func NewDriver(nodeID, endpoint string) *cvmfsDriver {
 	d.endpoint = endpoint
 
 	csiDriver := csicommon.NewCSIDriver(driverName, version, nodeID)
-	csiDriver.AddVolumeCapabilityAccessModes([]csi.VolumeCapability_AccessMode_Mode{csi.VolumeCapability_AccessMode_SINGLE_NODE_WRITER})
+	csiDriver.AddVolumeCapabilityAccessModes([]csi.VolumeCapability_AccessMode_Mode{csi.VolumeCapability_AccessMode_MULTI_NODE_READER_ONLY})
+	csiDriver.AddControllerServiceCapabilities([]csi.ControllerServiceCapability_RPC_Type{csi.ControllerServiceCapability_RPC_CREATE_DELETE_VOLUME})
+
+	// Create gRPC servers
 
 	d.driver = csiDriver
 
@@ -62,6 +65,13 @@ func NewControllerServer(d *cvmfsDriver) *controllerServer {
 	}
 }
 
+func NewIdentityServer(d *cvmfsDriver) *identityServer {
+	return &identityServer{
+		DefaultIdentityServer: csicommon.NewDefaultIdentityServer(d.driver),
+	}
+}
+
 func (d *cvmfsDriver) Run() {
-	csicommon.RunNodePublishServer(d.endpoint, d.driver, NewNodeServer(d))
+
+	csicommon.RunControllerandNodePublishServer(d.endpoint, d.driver, NewControllerServer(d), NewNodeServer(d))
 }
