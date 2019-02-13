@@ -8,7 +8,12 @@ import (
 
 const (
 	PluginFolder = "/var/lib/kubelet/plugins/csi-cvmfsplugin"
-	Version      = "1.0.1"
+	driverName = "cvmfsDriver"
+	version = "1.0.1"
+)
+
+var (
+	driver *cvmfsDriver
 )
 
 type cvmfsDriver struct {
@@ -22,18 +27,6 @@ type cvmfsDriver struct {
 	caps   []*csi.VolumeCapability_AccessMode
 	cscaps []*csi.ControllerServiceCapability
 }
-
-var (
-	driver *cvmfsDriver
-)
-
-const (
-	driverName = "cvmfsDriver"
-)
-
-var (
-	version = "1.0.0-rc2"
-)
 
 func NewDriver(nodeID, endpoint string) *cvmfsDriver {
 	glog.Infof("Driver: %v version: %v", driverName, version)
