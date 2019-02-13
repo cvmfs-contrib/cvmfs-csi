@@ -22,3 +22,5 @@ Session.vim
 *.orig
 *.patch
 *.rej
+
+.idea

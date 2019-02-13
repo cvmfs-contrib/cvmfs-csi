@@ -1,7 +1,7 @@
 .PHONY: all cvmfsplugin
 
 NAME=csi-cvmfsplugin
-IMAGE_VERSION=v0.3.0
+IMAGE_VERSION=v1.0.1
 
 all: cvmfsplugin
 
