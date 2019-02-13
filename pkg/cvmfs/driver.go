@@ -15,7 +15,7 @@ type cvmfsDriver struct {
 	driver *csicommon.CSIDriver
 	endpoint  string
 
-	ids *csicommon.DefaultIdentityServer
+	ids *identityServer
 	ns  *nodeServer
 	cs  *controllerServer
 
