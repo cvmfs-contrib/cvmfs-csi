@@ -62,9 +62,6 @@ spec:
               readOnly: true
             - name: host-dev
               mountPath: /dev
-            - name: cvmfs-config
-              mountPath: /etc/cvmfs/default.local
-              subPath: cvmfs-override
       volumes:
         - name: plugin-dir
           hostPath:
@@ -73,7 +70,7 @@ spec:
         - name: registration-dir
           hostPath:
             path: /var/lib/kubelet/plugins_registry/
-            type: Directory
+            type: DirectoryOrCreate
         - name: pods-mount-dir
           hostPath:
             path: /var/lib/kubelet/pods
@@ -87,6 +84,3 @@ spec:
         - name: host-dev
           hostPath:
             path: /dev
-        - name: cvmfs-config
-          configMap:
-            name: config
