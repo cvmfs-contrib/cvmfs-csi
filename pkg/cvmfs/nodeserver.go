@@ -38,18 +38,6 @@ func (ns *nodeServer) NodeStageVolume(ctx context.Context, req *csi.NodeStageVol
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	confData := cvmfsConfigData{
-		VolumeId: volId,
-		Tag:      volOptions.Tag,
-		Hash:     volOptions.Hash,
-		Proxy:    volOptions.Proxy,
-	}
-
-	if err := confData.writeToFile(); err != nil {
-		glog.Errorf("failed to write cvmfs config for volume %s: %v", volId, err)
-		return nil, status.Error(codes.Internal, err.Error())
-	}
-
 	if err := createVolumeCache(volId); err != nil {
 		glog.Errorf("failed to create cache for volume %s: %v", volId, err)
 	}
@@ -166,10 +154,6 @@ func (ns *nodeServer) NodeUnstageVolume(ctx context.Context, req *csi.NodeUnstag
 	}
 
 	// Clean up
-
-	if err := os.Remove(getConfigFilePath(volId)); err != nil {
-		glog.Errorf("cvmfs: cannot remove config for volume %s: %v", volId, err)
-	}
 
 	if err := purgeVolumeCache(volId); err != nil {
 		glog.Errorf("cvmfs: cannot delete cache for volume %s: %v", volId, err)

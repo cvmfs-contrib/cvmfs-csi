@@ -58,7 +58,6 @@ func mountCvmfs(volOptions *volumeOptions, volId volumeID, mountPoint string) er
 	return execCommandAndValidate("mount",
 		"-t", "cvmfs",
 		volOptions.Repository, mountPoint,
-		"-o", "config="+getConfigFilePath(volId),
 	)
 }
 

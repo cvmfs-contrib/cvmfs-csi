@@ -2,8 +2,6 @@ package cvmfs
 
 import (
 	"io/ioutil"
-	"os"
-	"path"
 	"text/template"
 )
 
@@ -47,26 +45,3 @@ func init() {
 	repoConfTempl = template.Must(template.New("repo-conf").Funcs(fs).Parse(repoConf))
 }
 
-type cvmfsConfigData struct {
-	VolumeId  volumeID
-	Tag, Hash string
-	Proxy     string
-}
-
-func (d *cvmfsConfigData) writeToFile() error {
-	f, err := os.OpenFile(getConfigFilePath(d.VolumeId), os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0755)
-	if err != nil {
-		if os.IsExist(err) {
-			return nil
-		}
-		return err
-	}
-
-	defer f.Close()
-
-	return repoConfTempl.Execute(f, d)
-}
-
-func getConfigFilePath(volId volumeID) string {
-	return path.Join(cvmfsConfigRoot, "config-csi-"+string(volId))
-}
