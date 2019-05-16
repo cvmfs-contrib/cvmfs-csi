@@ -1,0 +1,16 @@
+{{- range $key, $rep := .Values.repositories -}}
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: {{ $key }}
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    release: {{ $.Release.Name }}
+    heritage: {{ $.Release.Service }}
+    app: csi-cvmfsplugin
+provisioner: csi-cvmfsplugin
+parameters:
+  repository: {{ $rep }}
+
+---
+{{ end }}

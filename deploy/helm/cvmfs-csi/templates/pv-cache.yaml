@@ -1,0 +1,36 @@
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: cvmfs-cache-pv
+  namespace: {{ .Release.Namespace }}
+  labels:
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+    app: csi-cvmfsplugin
+spec:
+  storageClassName: {{ .Values.cache.storageClassName }}
+  capacity:
+    storage: {{ .Values.cache.size }}Mi
+  accessModes:
+    - {{ .Values.cache.accessMode }}
+  hostPath:
+    path: {{ .Values.cache.hostPath | quote }}
+
+---
+
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: cvmfs-cache-pvc
+  namespace: {{ .Release.Namespace }}
+  labels:
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+    app: csi-cvmfsplugin
+spec:
+  storageClassName: {{ .Values.cache.storageClassName }}
+  accessModes:
+    - {{ .Values.cache.accessMode }}
+  resources:
+    requests:
+      storage: {{ .Values.cache.size }}Mi

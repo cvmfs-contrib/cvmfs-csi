@@ -1,0 +1,12 @@
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: cvmfs-gxy-main
+  namespace: {{ .Values.namespace }}
+  labels:
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+    app: csi-cvmfsplugin
+provisioner: csi-cvmfsplugin
+parameters:
+  repository: main.galaxyproject.org

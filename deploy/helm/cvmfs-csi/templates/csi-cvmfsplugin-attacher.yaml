@@ -1,0 +1,55 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: csi-cvmfsplugin-attacher
+  namespace: {{ .Release.Namespace }}
+  labels:
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+    app: csi-cvmfsplugin-attacher
+spec:
+  selector:
+    app: csi-cvmfsplugin-attacher
+  ports:
+    - name: dummy
+      port: 12345
+
+---
+kind: StatefulSet
+apiVersion: apps/v1beta1
+metadata:
+  name: csi-cvmfsplugin-attacher
+  namespace: {{ .Release.Namespace }}
+  labels:
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+spec:
+  serviceName: "csi-cvmfsplugin-attacher"
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        release: {{ .Release.Name }}
+        heritage: {{ .Release.Service }}
+        app: csi-cvmfsplugin-attacher
+    spec:
+      serviceAccount: cvmfs-attacher
+      containers:
+        - name: csi-attacher
+          image: {{ .Values.csiAttacher.image }}
+          args:
+            {{- range $arg := .Values.csiAttacher.args }}
+            - {{ $arg | quote -}}
+            {{- end }}
+          env:
+            - name: ADDRESS
+              value: {{ .Values.csiPlugin.pluginDirectory }}/csi.sock
+          imagePullPolicy: "IfNotPresent"
+          volumeMounts:
+            - name: socket-dir
+              mountPath: {{ .Values.csiPlugin.pluginDirectory }}
+      volumes:
+        - name: socket-dir
+          hostPath:
+            path: {{ .Values.csiPlugin.pluginDirectory }}
+            type: DirectoryOrCreate

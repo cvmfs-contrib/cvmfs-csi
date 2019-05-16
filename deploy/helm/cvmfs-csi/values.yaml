@@ -1,0 +1,79 @@
+# Default values for galaxy-cvmfs-csi.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# All contents will be run through tpl
+# All mountPaths are relative to /etc/cvmfs/
+configs:
+  defaultLocal:
+    mountPath: default.local
+    contents: |
+      CVMFS_SERVER_URL="http://cvmfs-stratum-one.cern.ch/cvmfs/@fqrn@;http://cernvmfs.gridpp.rl.ac.uk/cvmfs/@fqrn@;http://cvmfs.racf.bnl.gov/cvmfs/@fqrn@;http://cvmfs.fnal.gov/cvmfs/@fqrn@"
+      CVMFS_KEYS_DIR=/etc/cvmfs/keys/cern.ch
+      CVMFS_USE_GEOAPI=yes
+
+      CVMFS_HTTP_PROXY="http://ca-proxy.cern.ch:3128"
+      CVMFS_QUOTA_LIMIT=20000
+      # It is advised to change these configs in the cache section of the helm values
+      CVMFS_QUOTA_LIMIT={{ .Values.cache.size }}
+      CVMFS_CACHE_BASE={{ .Values.cache.mountPath }}
+  firstKey:
+    mountPath: keys/cern.ch/my-first-key.pub
+    contents: |
+      -----BEGIN PUBLIC KEY-----
+      AAAAB3NzaC1yc2EAAAADAQABAAABAQCwG9Gtd95SaC6EmcYGzhBve1emIg5z8ReR
+      oVUb0hkuguwjY61AOWEwGfmOVsqrGg1v97Tu8i0O1gCahdUYDZK7hZ9ad82g3dbh
+      N2Fe0bikMTyObG0EyWpjQRXHYpypImBWKE6f2xMtYpr7rNjBUhOJbaspG9Q8Em+R
+      McqRiCM2/MrBFfy4oe32z0ivBK8kfI1jYHOq6InT/LJ7MMPx0XCPOCVD+etYSz89
+      XDUL0dlqrH8HuuVkMxDRbjq4U0ZXeF5XhjL/b3EU9lgNF3KMCkmPGTptWv554CJ0
+      tM5JavKILEYnZDUT14XTJH7bBNx4a90gHEz33zaSoS6vgZ3oonuv
+      -----END PUBLIC KEY-----
+  secondKey:
+    mountPath: keys/cern.ch/my-second-key.pub
+    contents: |
+      -----BEGIN PUBLIC KEY-----
+      AAAAB3NzaC1yc2EAAAADAQABAAABAQCwG9Gtd95SaC6EmcYGzhBve1emIg5z8ReR
+      oVUb0hkuguwjY61AOWEwGfmOVsqrGg1v97Tu8i0O1gCahdUYDZK7hZ9ad82g3dbh
+      N2Fe0bikMTyObG0EyWpjQRXHYpypImBWKE6f2xMtYpr7rNjBUhOJbaspG9Q8Em+R
+      McqRiCM2/MrBFfy4oe32z0ivBK8kfI1jYHOq6InT/LJ7MMPx0XCPOCVD+etYSz89
+      XDUL0dlqrH8HuuVkMxDRbjq4U0ZXeF5XhjL/b3EU9lgNF3KMCkmPGTptWv554CJ0
+      tM5JavKILEYnZDUT14XTJH7bBNx4a90gHEz33zaSoS6vgZ3oonuv
+      -----END PUBLIC KEY-----
+
+# A storage class will be created for each repository
+repositories:
+  # The key will be used for the storage class name
+  # The value will be used for the repository
+  storageClassName: my-repostory.name
+
+cache:
+  storageClassName: manual
+  accessMode: ReadWriteMany
+  # size in Mi, will propagate to both default.local and PV/PVC size
+  size: 1000
+  hostPath: /tmp/k8s/volumes/cvmfs/cache
+  mountPath: /mnt/cvmfs/cache
+
+# Advanced settings
+# Changing these settings is not advised unless you know what you are doing
+csiPlugin:
+  image: gitlab-registry.nautilus.optiputer.net/prp/cvmfs-csi:latest
+  args:
+    - "--nodeid=$(NODE_ID)"
+    - "--endpoint=$(CSI_ENDPOINT)"
+    - "--v=5"
+    - "--drivername=csi-cvmfsplugin"
+  pluginDirectory: /var/lib/kubelet/plugins/csi-cvmfsplugin
+  nodeDriverImage: quay.io/k8scsi/csi-node-driver-registrar:v1.0.2
+csiAttacher:
+  image: quay.io/k8scsi/csi-attacher:v1.0.1
+  args:
+    - "--v=5"
+    - "--csi-address=$(ADDRESS)"
+csiProvisioner:
+  image: quay.io/k8scsi/csi-provisioner:v1.0.1
+  args:
+    - "--provisioner=csi-cvmfsplugin"
+    - "--csi-address=$(ADDRESS)"
+    - "--v=5"
+
