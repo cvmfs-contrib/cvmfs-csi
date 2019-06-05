@@ -10,7 +10,7 @@ test:
 	go vet gitlab.cern.ch/cloud-infrastructure/cvmfs-csi/pkg/...
 
 cvmfsplugin:
-	if [ ! -d ./vendor ]; then dep ensure; fi
+	go mod tidy
 	CGO_ENABLED=0 GOOS=linux go build -a -ldflags '-extldflags "-static"' -o  _output/$(NAME) ./cvmfs
 
 image: cvmfsplugin 
@@ -19,4 +19,4 @@ image: cvmfsplugin
 
 clean:
 	go clean -r -x
-	rm -f deploy/docker/rbdplugin
+	rm -f deploy/docker/$(NAME)
