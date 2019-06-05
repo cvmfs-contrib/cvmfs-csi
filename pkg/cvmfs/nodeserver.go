@@ -134,7 +134,7 @@ func (ns *nodeServer) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpu
 	// Unbind the volume
 
 	if err := unmountVolume(targetPath); err != nil {
-		glog.Errorf("failed to unbind volume %s: %v")
+		glog.Errorf("failed to unbind volume %s: %v", targetPath, err)
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 

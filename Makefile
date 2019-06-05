@@ -13,7 +13,7 @@ cvmfsplugin:
 	go mod tidy
 	CGO_ENABLED=0 GOOS=linux go build -a -ldflags '-extldflags "-static"' -o  _output/$(NAME) ./cvmfs
 
-image: cvmfsplugin 
+image:
 	cp _output/$(NAME) deploy/docker
 	docker build -t $(NAME):$(IMAGE_VERSION) deploy/docker
 
