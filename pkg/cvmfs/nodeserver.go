@@ -48,6 +48,32 @@ func (ns *nodeServer) NodeStageVolume(ctx context.Context, req *csi.NodeStageVol
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
+
+	base := "/cvmfs/"+string(volOptions.Repository)
+
+
+	if err = createMountPoint(base); err != nil {
+		glog.Errorf("failed to create staging mount point at %s for volume %s: %v", base, volId, err)
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	// Check if the volume is already mounted
+
+	isMnt, err := isMountPoint(base)
+
+	if err != nil {
+		glog.Errorf("stat failed: %v", err)
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	if !isMnt {
+		// It's not, mount now
+		if err = mountCvmfs(volOptions, volId, base); err != nil {
+			glog.Errorf("failed to mount volume %s to %s: %v", volId, base, err)
+			return nil, status.Error(codes.Internal, err.Error())
+		}
+	}
+
 	if err = createMountPoint(stagingTargetPath); err != nil {
 		glog.Errorf("failed to create staging mount point at %s for volume %s: %v", stagingTargetPath, volId, err)
 		return nil, status.Error(codes.Internal, err.Error())
@@ -71,7 +97,7 @@ func (ns *nodeServer) NodeStageVolume(ctx context.Context, req *csi.NodeStageVol
 
 	// Check if the volume is already mounted
 
-	isMnt, err := isMountPoint(stagingTargetPath)
+	isMnt, err = isMountPoint(stagingTargetPath)
 
 	if err != nil {
 		glog.Errorf("stat failed: %v", err)
@@ -85,8 +111,8 @@ func (ns *nodeServer) NodeStageVolume(ctx context.Context, req *csi.NodeStageVol
 
 	// It's not, mount now
 
-	if err = mountCvmfs(volOptions, volId, stagingTargetPath); err != nil {
-		glog.Errorf("failed to mount volume %s to %s: %v", volId, stagingTargetPath, err)
+	if err = bindMount(base, stagingTargetPath); err != nil {
+		glog.Errorf("failed to bind-mount %s to %s: %v", base, stagingTargetPath, err)
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
