@@ -32,8 +32,8 @@ func main() {
 		os.Exit(1)
 	}
 
-	driver := cvmfs.NewCvmfsDriver()
-	driver.Run(*driverName, *nodeId, *endpoint)
+	driver := cvmfs.NewDriver(*nodeId, *endpoint)
+	driver.Run()
 
 	os.Exit(0)
 }

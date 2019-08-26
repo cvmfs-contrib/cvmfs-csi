@@ -1,9 +1,9 @@
 [[constraint]]
   name = "github.com/container-storage-interface/spec"
-  version = "~0.3.0"
+  version = "v1.0.0"
 
 [[constraint]]
-  branch = "master"
+  version = "v1.0.2"
   name = "github.com/kubernetes-csi/drivers"
 
 [[constraint]]
@@ -11,28 +11,28 @@
   name = "github.com/golang/glog"
 
 [[override]]
-  revision = "5db89f0ca68677abc5eefce8f2a0a772c98ba52d"
+  revision = "v2.7.1"
   name = "github.com/docker/distribution"
 
 [[constraint]]
   name = "google.golang.org/grpc"
-  version = "1.10.0"
+  version = "1.18.0"
 
-[[constraint]]
-  version = "kubernetes-1.10.0-beta.1"
+[[override]]
+  version = "kubernetes-1.13.3"
   name = "k8s.io/apimachinery"
 
 [[constraint]]
   name = "k8s.io/kubernetes"
-  version = "v1.10.0-beta.1"
+  version = "v1.13.3"
 
 [[override]]
-  version = "kubernetes-1.10.0-beta.1"
+  version = "kubernetes-1.13.3"
   name = "k8s.io/api"
 
 [[override]]
   name = "github.com/golang/protobuf"
-  version = "1.1.0"
+  version = "1.2.0"
 
 [prune]
   go-tests = true

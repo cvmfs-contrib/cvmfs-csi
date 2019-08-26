@@ -7,7 +7,7 @@ import (
 	"github.com/golang/glog"
 	"github.com/pborman/uuid"
 
-	"github.com/container-storage-interface/spec/lib/go/csi/v0"
+	"github.com/container-storage-interface/spec/lib/go/csi"
 )
 
 type volumeID string

@@ -1,14 +1,30 @@
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: csi-nodeplugin
+  name: cvmfs-csi-nodeplugin
+  namespace: kube-system
 
 ---
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: csi-nodeplugin
+  name: cvmfs-csi-nodeplugin
+aggregationRule:
+  clusterRoleSelectors:
+    - matchLabels:
+        rbac.cvmfs.csi.cern.ch/aggregate-to-cvmfs-csi-nodeplugin: "true"
+rules: []
+---
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: cvmfs-csi-nodeplugin-rules
+  labels:
+    rbac.cvmfs.csi.cern.ch/aggregate-to-cvmfs-csi-nodeplugin: "true"
 rules:
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["get", "list"]
   - apiGroups: [""]
     resources: ["nodes"]
     verbs: ["get", "list", "update"]
@@ -25,13 +41,14 @@ rules:
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: csi-nodeplugin
+  name: cvmfs-csi-nodeplugin
 subjects:
   - kind: ServiceAccount
-    name: csi-nodeplugin
-    namespace: default
+    name: cvmfs-csi-nodeplugin
+    namespace: kube-system
 roleRef:
   kind: ClusterRole
-  name: csi-nodeplugin
+  name: cvmfs-csi-nodeplugin
   apiGroup: rbac.authorization.k8s.io
+
   

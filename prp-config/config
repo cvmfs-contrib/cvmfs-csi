@@ -1,0 +1,2 @@
+CVMFS_HTTP_PROXY="http://cvmfs-1.t2.ucsd.edu:3128"
+CVMFS_QUOTA_LIMIT=5000
