@@ -1,10 +1,5 @@
-# build directory
-/output*/
-/_output*/
-/_output
-
-# docker build
-/deploy/docker/csi-cvmfsplugin
+bin
+_dist
 
 # Emacs save files
 *~

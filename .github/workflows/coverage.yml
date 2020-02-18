@@ -1,0 +1,28 @@
+name: coverage
+on:
+  push:
+    branches:
+      - '*'
+jobs:
+  test:
+    name: Test with Coverage
+    runs-on: ubuntu-latest
+    env:
+      GOVER: 1.13.3
+      GOPROXY: https://proxy.golang.org
+    steps:
+      - name: Set up Go ${{ env.GOVER }}
+        uses: actions/setup-go@v1
+        with:
+          go-version: ${{ env.GOVER }}
+      - name: Check out code
+        uses: actions/checkout@master
+      - name: Run make test-coverage
+        run: |
+          make test-coverage
+      - name: Send coverage
+        env:
+          COVERALLS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          GO111MODULE=off go get github.com/mattn/goveralls
+          $(go env GOPATH)/bin/goveralls -coverprofile=profile.cov -service=github

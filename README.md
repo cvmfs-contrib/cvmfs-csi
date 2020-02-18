@@ -1,19 +1,27 @@
-# CernVM-FS CSI driver
+# CVMFS CSI driver
+
+[![Build Status](https://github.com/cernops/cvmfs-csi/workflows/csi-cvmfsplugin/badge.svg?event=push&branch=master)](https://github.com/cernops/cvmfs-csi/actions?workflow=csi-cvmfsplugin)
+[![Go Report Card](https://goreportcard.com/badge/github.com/cernops/cvmfs-csi)](https://goreportcard.com/report/github.com/cernops/cvmfs-csi)
+[![GoDoc](https://godoc.org/github.com/cernops/cvmfs-csi?status.svg)](https://godoc.org/github.com/cernops/cvmfs-csi)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
 csi-cvmfs provides read-only mounting of CVMFS volumes in CSI-enabled container orchestrators.
 
 ## Building
 
-The CSI CernVM-FS driver can be compiled in a form of a binary file or an image. When compiled as a binary, the resulting file gets stored in `_output` directory. When compiled as an image, it gets stored in local Docker image store.
-
-Building a binary:
-```bash
-$ make cvmfsplugin
+To build the binary in ./bin:
+```
+make build
 ```
 
-Building a Docker image:
+To build binaries for multiple platforms:
 ```
-$ make image
+make build-cross
+```
+
+To make the docker image:
+```
+make docker
 ```
 
 ## Configuration

@@ -1,4 +1,5 @@
-#!/bin/bash
+#!/usr/bin/env bash
+#
 # Copyright CERN.
 #
 #
@@ -14,18 +15,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+# Based on the Helm script file:
+# github.com/helm/helm/scripts/coverage.sh
 
+set -euo pipefail
 
-CONTAINER_NAME=csi-cvmfsplugin
-POD_NAME=$(kubectl get pods -l app=$CONTAINER_NAME -o=name | head -n 1)
+if ! [ -x "$(command -v github_changelog_generator)" ]; then
+  gem install --user-install github_changelog_generator
+  export PATH=$PATH:$(find ~/.gem -name bin | tail -1)
+fi
 
-function get_pod_status() {
-	echo -n $(kubectl get $POD_NAME -o jsonpath="{.status.phase}")
-}
-
-while [[ "$(get_pod_status)" != "Running" ]]; do
-	sleep 1
-	echo "Waiting for $POD_NAME (status $(get_pod_status))"
-done
-
-kubectl exec -it ${POD_NAME#*/} -c $CONTAINER_NAME bash
+github_changelog_generator -u cernops -p cvmfs-csi --token $GITHUB_TOKEN --since-tag $(git describe --abbrev=0 --tags `git rev-list --tags --skip=1 --max-count=1`)
