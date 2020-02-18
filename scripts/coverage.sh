@@ -1,4 +1,5 @@
-#!/bin/bash
+#!/usr/bin/env bash
+#
 # Copyright CERN.
 #
 #
@@ -14,18 +15,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+# Based on the Helm script file:
+# github.com/helm/helm/scripts/coverage.sh
 
+set -euo pipefail
 
-CONTAINER_NAME=csi-cvmfsplugin
-POD_NAME=$(kubectl get pods -l app=$CONTAINER_NAME -o=name | head -n 1)
+pushd /
+hash goveralls 2>/dev/null || go get github.com/mattn/goveralls
+popd
 
-function get_pod_status() {
-	echo -n $(kubectl get $POD_NAME -o jsonpath="{.status.phase}")
-}
+go test -race -covermode atomic -coverprofile=profile.cov ./...
+go tool cover -func profile.cov
+case "${1-}" in
+  --html)
+    go tool cover -html profile.cov
+    ;;
+esac
 
-while [[ "$(get_pod_status)" != "Running" ]]; do
-	sleep 1
-	echo "Waiting for $POD_NAME (status $(get_pod_status))"
-done
-
-kubectl exec -it ${POD_NAME#*/} -c $CONTAINER_NAME bash
