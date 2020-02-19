@@ -66,7 +66,7 @@ spec:
             privileged: true
             capabilities:
               add: ["SYS_ADMIN"]
-              image: cvmfscsi:latest
+          image: cvmfscsi:latest
           args:
             - "--nodeid=$(NODE_ID)"
             - "--type=cvmfs"
