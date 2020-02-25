@@ -6,6 +6,6 @@ RUN yum install -y http://ecsft.cern.ch/dist/cvmfs/cvmfs-release/cvmfs-release-l
 
 COPY configs/default.local /etc/cvmfs
 
-COPY _dist/linux-amd64/csi-cvmfsplugin_linux_amd64 /csi-cvmfsplugin
+COPY bin/csi-cvmfsplugin /csi-cvmfsplugin
 RUN chmod +x /csi-cvmfsplugin
 ENTRYPOINT ["/csi-cvmfsplugin"]

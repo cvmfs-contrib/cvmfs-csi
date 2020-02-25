@@ -41,7 +41,7 @@ CVMFS_CACHE_BASE={{cacheBase .VolumeId}}
 CVMFS_ROOT_HASH={{.Hash}}
 CVMFS_AUTO_UPDATE=no
 {{else if .Tag}}
-CVFMFS_REPOSITORY_TAG={{.Tag}}
+CVMFS_REPOSITORY_TAG={{.Tag}}
 {{end}}`
 
 var (
