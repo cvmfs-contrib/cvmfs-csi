@@ -1,0 +1,107 @@
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# All contents will be run through tpl
+# All mountPaths are relative to /etc/cvmfs/
+configs:
+  defaultLocal:
+    mountPath: default.local
+    contents: |
+      CVMFS_SERVER_URL="http://cvmfs-stratum-one.cern.ch/cvmfs/@fqrn@;http://cernvmfs.gridpp.rl.ac.uk/cvmfs/@fqrn@;http://cvmfs.racf.bnl.gov/cvmfs/@fqrn@;http://cvmfs.fnal.gov/cvmfs/@fqrn@"
+      CVMFS_KEYS_DIR=/etc/cvmfs/keys/cern.ch
+      CVMFS_USE_GEOAPI=yes
+
+      CVMFS_HTTP_PROXY="http://ca-proxy.cern.ch:3128"
+      # It is advised to change these configs in the cache section of the helm values
+      # and leave them unchanged here, so they auto-generate
+      CVMFS_QUOTA_LIMIT={{ .Values.cache.localCache.size }}
+      CVMFS_CACHE_BASE={{ .Values.cache.localCache.mountPath }}
+      {{- if .Values.cache.alienCache.enabled }}
+      CVMFS_ALIEN_CACHE={{ .Values.cache.alienCache.mountPath }}
+      # When alien cache is used, CVMFS does not control the size of the cache
+      CVMFS_QUOTA_LIMIT=-1
+      # For clarification, this is referencing whether repositories
+      # should share a cache directory or each have their own
+      CVMFS_SHARED_CACHE=no
+      {{- end -}}
+  cernKey:
+    mountPath: keys/cern.ch/repository.cern.ch.pub
+    contents: |
+      -----BEGIN PUBLIC KEY-----
+      MIGeMA0GCSqGSIb3DQEBAQUAA4GMADCBiAKBgHvy9PFYteIdwD5OxEosZoqpSUxP
+      LddA+zRwD0lWfavbFoCJOJS23zPpIimQ0gzH3FAebR3x9JzVVa3JFLxIUj4Fv3d6
+      /3fWhyK4Nmxc7B1Qh7wrRYlYtcDszGGk2DB0ETI83Jbzvfx1slvhMkqjWQ0c30w8
+      BWglnUvav0hRRwJRAgMBAAE=
+      -----END PUBLIC KEY-----
+
+# A storage class will be created for each repository
+repositories:
+  # The key will be used for the storage class name
+  # The value will be used for the repository
+  cern-repo: repository.cern.ch
+
+cache:
+  # If both local and alien cache are disabled, ephemeral
+  # storage (emptyDir volume) will be used for caching
+  # Requires a ReadWriteOnce volume for the local cache
+  # localCache can not be used in a multi-node setup unless
+  # the cache PVs are defined manually for all pods of the DaemonSet.
+  # If local cache is enabled, alien cache must be disabled.
+  localCache:
+    enabled: false
+    storageClass: ""
+    # size in Mi, will propagate to both default.local and PV/PVC size
+    size: 10000
+    mountPath: /mnt/cvmfs/localcache
+  # Optional shared ReadWriteMany cache volume.
+  # If alien cache is enabled, local cache must be disabled.
+  # An emptyDir ephemeral volume will be used for local
+  # control files for each pod scaled by the DaemonSet on
+  # each node. The alien cache volume will be shared
+  # among all the CVMFS clients running on the different nodes.
+  # Read more about alien cache limitations at:
+  # https://cvmfs.readthedocs.io/en/stable/cpt-configure.html#alien-cache
+  alienCache:
+    enabled: true
+    size: 10000 # in Mi
+    storageClass: nfs
+    mountPath: /mnt/cvmfs/aliencache
+  preload:
+    enabled: true
+    repositories:
+      # - name: repository.cern.ch
+      #   mountPath: /cvmfs/repository.cern.ch
+      #   # Docker image with cvmfs_preload binary pre-installed
+      #   image: almahmoud/cvmfs_preload:latest
+      #   mountConfigs:
+      #     - defaultLocal
+      #     - cernKey
+      #   mountCache: true
+      #   commands:
+      #     - cvmfs_preload -u http://cvmfs-stratum-zero.cern.ch/cvmfs/repository.cern.ch -r /mnt/cvmfs/aliencache -k /etc/cvmfs/keys/cern.ch
+
+# Advanced settings
+# Changing these settings is not advised unless you know what you are doing
+csiPlugin:
+  # This image includes the patch to the plugin allowing
+  # for multiple PVCs across multiple namespaces
+  # https://github.com/cernops/cvmfs-csi/commit/c680862082738aba1469707a891a6f7fecf72f53
+  image: cloudve/csi-cvmfsplugin:v1.0.1
+  args:
+    - "--nodeid=$(NODE_ID)"
+    - "--endpoint=$(CSI_ENDPOINT)"
+    - "--v=5"
+    - "--drivername=csi-cvmfsplugin"
+  pluginDirectory: /var/lib/kubelet/plugins/csi-cvmfsplugin
+  nodeDriverImage: quay.io/k8scsi/csi-node-driver-registrar:v1.0.2
+csiAttacher:
+  image: quay.io/k8scsi/csi-attacher:v1.0.1
+  args:
+    - "--v=5"
+    - "--csi-address=$(ADDRESS)"
+csiProvisioner:
+  image: quay.io/k8scsi/csi-provisioner:v1.0.1
+  args:
+    - "--provisioner=csi-cvmfsplugin"
+    - "--csi-address=$(ADDRESS)"
+    - "--v=5"
