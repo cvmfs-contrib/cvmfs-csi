@@ -2,7 +2,7 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: cvmfs-csi-nodeplugin
-  namespace: kube-system
+  namespace: cvmfs
 
 ---
 kind: ClusterRole
@@ -45,7 +45,7 @@ metadata:
 subjects:
   - kind: ServiceAccount
     name: cvmfs-csi-nodeplugin
-    namespace: kube-system
+    namespace: cvmfs
 roleRef:
   kind: ClusterRole
   name: cvmfs-csi-nodeplugin

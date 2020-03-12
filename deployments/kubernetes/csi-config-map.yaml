@@ -6,3 +6,4 @@ data:
     []
 metadata:
   name: cvmfs-csi-config
+  namespace: cvmfs
