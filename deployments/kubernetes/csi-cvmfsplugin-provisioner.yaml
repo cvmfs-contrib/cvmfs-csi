@@ -3,7 +3,7 @@ kind: Service
 apiVersion: v1
 metadata:
   name: csi-cvmfsplugin-provisioner
-  namespace: kube-system 
+  namespace: cvmfs
   labels:
     app: csi-cvmfsplugin-provisioner
 spec:
@@ -18,7 +18,7 @@ kind: Deployment
 apiVersion: apps/v1
 metadata:
   name: csi-cvmfsplugin-provisioner
-  namespace: kube-system
+  namespace: cvmfs
 spec:
   selector:
     matchLabels:
