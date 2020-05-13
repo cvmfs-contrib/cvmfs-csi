@@ -47,7 +47,7 @@ rules:
   - apiGroups: ["storage.k8s.io"]
     resources: ["volumeattachments"]
     verbs: ["get", "list", "watch", "update"]
-   
+
 ---
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
@@ -56,6 +56,7 @@ metadata:
 subjects:
   - kind: ServiceAccount
     name: cvmfs-csi-provisioner
+    namespace: cvmfs
 roleRef:
   kind: ClusterRole
   name: cvmfs-external-provisioner-runner
