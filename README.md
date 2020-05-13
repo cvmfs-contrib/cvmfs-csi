@@ -46,7 +46,7 @@ Parameter | Required | Description
 By default, csi-cvmfs is distributed with `default.local` containing CERN defaults. You can override those at runtime by overwriting `/etc/cvmfs/default.local`, which is then sourced into any later CVMFS client configs used for mounting.
 
 
-**CVMFS configuration in Kubernetes**  
+**CVMFS configuration in Kubernetes**
 You can use Kubernetes [config map](https://kubernetes.io/docs/tasks/configure-pod-container/configure-pod-configmap/) to inject a custom `default.local` file.
 
 ```bash
@@ -82,6 +82,7 @@ YAML manifests are located in `deploy/kubernetes`.
 **Deploy RBACs for sidecar containers and node plugins:**
 
 ```bash
+$ kubectl create -f namespace.yaml
 $ kubectl create -f csi-attacher-rbac.yaml
 $ kubectl create -f csi-provisioner-rbac.yaml
 $ kubectl create -f csi-nodeplugin-rbac.yaml
@@ -110,8 +111,8 @@ Deploys a daemon set with two containers: CSI driver-registrar and the CSI CernV
 
 After successfuly completing the steps above, you should see output similar to this:
 ```bash
-$ kubectl get all
-NAME                                READY     STATUS    RESTARTS   AGE                       
+$ kubectl get all --namespace=cvmfs
+NAME                                READY     STATUS    RESTARTS   AGE
 pod/csi-cvmfsplugin-attacher-0      1/1       Running   0          1m
 pod/csi-cvmfsplugin-bhqck           2/2       Running   0          1m
 pod/csi-cvmfsplugin-provisioner-0   1/1       Running   0          1m
