@@ -1,6 +1,7 @@
 apiVersion: v1
 kind: ServiceAccount
 metadata:
+  namespace: {{ .Release.Namespace }}
   name: cvmfs-provisioner
   labels:
     app.kubernetes.io/name: {{ include "cvmfs-csi.name" . }}

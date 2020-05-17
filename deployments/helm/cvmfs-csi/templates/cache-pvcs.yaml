@@ -3,6 +3,7 @@ kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
   name: {{ .Release.Name }}-cvmfs-alien-cache-pvc
+  namespace: {{ .Release.Namespace }}
   labels:
     app.kubernetes.io/name: {{ include "cvmfs-csi.name" . }}
     helm.sh/chart: {{ include "cvmfs-csi.chart" . }}
@@ -22,6 +23,7 @@ kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
   name: {{ .Release.Name }}-cvmfs-local-cache-pvc
+  namespace: {{ .Release.Namespace }}
   labels:
     app.kubernetes.io/name: {{ include "cvmfs-csi.name" . }}
     helm.sh/chart: {{ include "cvmfs-csi.chart" . }}

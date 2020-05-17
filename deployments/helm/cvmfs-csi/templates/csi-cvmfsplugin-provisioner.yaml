@@ -2,6 +2,7 @@ kind: Service
 apiVersion: v1
 metadata:
   name: csi-cvmfsplugin-provisioner
+  namespace: {{ .Release.Namespace }}
   labels:
     app.kubernetes.io/name: {{ include "cvmfs-csi.name" . }}
     helm.sh/chart: {{ include "cvmfs-csi.chart" . }}
@@ -16,18 +17,21 @@ spec:
       port: 12345
 
 ---
-kind: StatefulSet
-apiVersion: apps/v1beta1
+kind: Deployment
+apiVersion: apps/v1
 metadata:
   name: csi-cvmfsplugin-provisioner
+  namespace: {{ .Release.Namespace }}
   labels:
     app.kubernetes.io/name: {{ include "cvmfs-csi.name" . }}
     helm.sh/chart: {{ include "cvmfs-csi.chart" . }}
     app.kubernetes.io/instance: {{ .Release.Name }}
     app.kubernetes.io/managed-by: {{ .Release.Service }}
 spec:
-  serviceName: "csi-cvmfsplugin-provisioner"
   replicas: 1
+  selector:
+    matchLabels:
+      app: csi-cvmfsplugin-provisioner
   template:
     metadata:
       labels:

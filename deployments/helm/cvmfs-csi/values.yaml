@@ -62,7 +62,7 @@ cache:
   # Read more about alien cache limitations at:
   # https://cvmfs.readthedocs.io/en/stable/cpt-configure.html#alien-cache
   alienCache:
-    enabled: true
+    enabled: false
     size: 10000 # in Mi
     storageClass: nfs
     mountPath: /mnt/cvmfs/aliencache
@@ -91,8 +91,8 @@ csiPlugin:
     - "--nodeid=$(NODE_ID)"
     - "--endpoint=$(CSI_ENDPOINT)"
     - "--v=5"
-    - "--drivername=csi-cvmfsplugin"
-  pluginDirectory: /var/lib/kubelet/plugins/csi-cvmfsplugin
+    - "--drivername=cvmfs.csi.cern.ch"
+  pluginDirectory: /var/lib/kubelet/plugins/cvmfs.csi.cern.ch
   nodeDriverImage: quay.io/k8scsi/csi-node-driver-registrar:v1.0.2
 csiAttacher:
   image: quay.io/k8scsi/csi-attacher:v1.0.1
@@ -102,6 +102,6 @@ csiAttacher:
 csiProvisioner:
   image: quay.io/k8scsi/csi-provisioner:v1.0.1
   args:
-    - "--provisioner=csi-cvmfsplugin"
+    - "--provisioner=cvmfs.csi.cern.ch"
     - "--csi-address=$(ADDRESS)"
     - "--v=5"
