@@ -1,0 +1,51 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  namespace: {{ .Release.Namespace }}
+  name: cvmfs-nodeplugin
+  labels:
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+---
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: cvmfs-nodeplugin
+  labels:
+    app.kubernetes.io/name: {{ include "cvmfs-csi.name" . }}
+    helm.sh/chart: {{ include "cvmfs-csi.chart" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+rules:
+  - apiGroups: [""]
+    resources: ["nodes"]
+    verbs: ["get", "list", "update"]
+  - apiGroups: [""]
+    resources: ["namespaces"]
+    verbs: ["get", "list"]
+  - apiGroups: [""]
+    resources: ["persistentvolumes"]
+    verbs: ["get", "list", "watch", "update"]
+  - apiGroups: ["storage.k8s.io"]
+    resources: ["volumeattachments"]
+    verbs: ["get", "list", "watch", "update"]
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: cvmfs-nodeplugin
+  labels:
+    app.kubernetes.io/name: {{ include "cvmfs-csi.name" . }}
+    helm.sh/chart: {{ include "cvmfs-csi.chart" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+subjects:
+  - kind: ServiceAccount
+    name: cvmfs-nodeplugin
+    namespace: {{ .Release.Namespace }}
+roleRef:
+  kind: ClusterRole
+  name: cvmfs-nodeplugin
+  apiGroup: rbac.authorization.k8s.io
+
+  
