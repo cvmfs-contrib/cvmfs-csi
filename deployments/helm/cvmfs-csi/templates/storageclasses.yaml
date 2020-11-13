@@ -9,7 +9,7 @@ metadata:
     app.kubernetes.io/instance: {{ $.Release.Name }}
     app.kubernetes.io/managed-by: {{ $.Release.Service }}
     app: csi-cvmfsplugin
-provisioner: csi-cvmfsplugin
+provisioner: {{ $.Values.provisioner }}
 parameters:
   repository: {{ $rep }}
 
