@@ -38,7 +38,8 @@ configs:
 repositories:
   # The key will be used for the storage class name
   # The value will be used for the repository
-  cern-repo: repository.cern.ch
+  # Example of repositories key value should look like the following:
+  # cern-repo: repository.cern.ch
 
 cache:
   # If both local and alien cache are disabled, ephemeral
