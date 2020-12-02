@@ -11,7 +11,7 @@ configs:
       CVMFS_KEYS_DIR=/etc/cvmfs/keys/cern.ch
       CVMFS_USE_GEOAPI=yes
 
-      CVMFS_HTTP_PROXY="http://ca-proxy.cern.ch:3128"
+      CVMFS_HTTP_PROXY="{{ .Values.http_proxy }}"
       # It is advised to change these configs in the cache section of the helm values
       # and leave them unchanged here, so they auto-generate
       CVMFS_QUOTA_LIMIT={{ .Values.cache.localCache.size }}
@@ -33,6 +33,11 @@ configs:
       /3fWhyK4Nmxc7B1Qh7wrRYlYtcDszGGk2DB0ETI83Jbzvfx1slvhMkqjWQ0c30w8
       BWglnUvav0hRRwJRAgMBAAE=
       -----END PUBLIC KEY-----
+
+#this should point to the default value if you are inside CERN
+#or to your local squid cache deployment
+#the special value DIRECT can be used for small deployments
+http_proxy: http://ca-proxy.cern.ch:3128
 
 # A storage class will be created for each repository
 repositories:

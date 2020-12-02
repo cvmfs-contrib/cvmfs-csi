@@ -45,3 +45,4 @@ Alternatively, a YAML file that specifies the values of the parameters can be pr
 | `cache.preload.repositories.[].commands`     | List of commands to run inside the Job pod container for this repository                                                                                            |
 | `cache.preload.repositories.[].mountConfigs` | List of configs to mount inside the Job pod container for this repository. Must be list of keys from configs dictionary above                                       |
 | `cache.preload.repositories.[].mountCache`   | Boolean indicating whether to mount the cache repositories into the Job container for this repository                                                               |
+| `http_proxy`                                 | String indicating the http proxies that CVMFS should use, see <https://cvmfs.readthedocs.io/en/stable/cpt-configure.html#proxy-lists>                               |
