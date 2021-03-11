@@ -59,3 +59,6 @@ spec:
           hostPath:
             path: {{ .Values.csiPlugin.pluginDirectory }}
             type: DirectoryOrCreate
+    {{- if .Values.csiProvisioner.nodeSelector }}
+      nodeSelector: {{ toYaml .Values.csiProvisioner.nodeSelector | nindent 8 }}
+    {{- end }}
