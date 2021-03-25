@@ -123,4 +123,12 @@ spec:
           emptyDir: {}
         {{- end }}
         {{- end }}
-
+    {{- if .Values.csiPlugin.affinity }}
+      affinity: {{ toYaml .Values.csiPlugin.affinity | nindent 8 }}
+    {{- end }}
+    {{- if .Values.csiPlugin.tolerations }}
+      tolerations: {{ toYaml .Values.csiPlugin.tolerations | nindent 8 }}
+    {{- end }}
+    {{- if .Values.csiPlugin.priorityClassName }}
+      priorityClassName: {{ toYaml .Values.csiPlugin.priorityClassName | nindent 8 }}
+    {{- end }}
