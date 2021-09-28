@@ -86,22 +86,21 @@ csiPlugin:
   # This image includes the patch to the plugin allowing
   # for multiple PVCs across multiple namespaces
   # https://github.com/cernops/cvmfs-csi/commit/c680862082738aba1469707a891a6f7fecf72f53
-  image: cloudve/csi-cvmfsplugin:v1.0.1
+  image: fbarreir/csi-cvmfsplugin:9
   args:
     - "--nodeid=$(NODE_ID)"
     - "--endpoint=$(CSI_ENDPOINT)"
     - "--v=5"
     - "--drivername=cvmfs.csi.cern.ch"
   pluginDirectory: /var/lib/kubelet/plugins/cvmfs.csi.cern.ch
-  nodeDriverImage: quay.io/k8scsi/csi-node-driver-registrar:v1.0.2
+  nodeDriverImage: quay.io/k8scsi/csi-node-driver-registrar:v1.3.0
 csiAttacher:
-  image: quay.io/k8scsi/csi-attacher:v1.0.1
+  image: quay.io/k8scsi/csi-attacher:v3.1.0
   args:
     - "--v=5"
     - "--csi-address=$(ADDRESS)"
 csiProvisioner:
-  image: quay.io/k8scsi/csi-provisioner:v1.0.1
+  image: quay.io/k8scsi/csi-provisioner:v2.1.2
   args:
-    - "--provisioner=cvmfs.csi.cern.ch"
     - "--csi-address=$(ADDRESS)"
     - "--v=5"
