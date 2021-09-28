@@ -11,7 +11,7 @@ configs:
       CVMFS_KEYS_DIR=/etc/cvmfs/keys/cern.ch
       CVMFS_USE_GEOAPI=yes
 
-      CVMFS_HTTP_PROXY="http://ca-proxy.cern.ch:3128"
+      CVMFS_HTTP_PROXY="http://ca-proxy.cern.ch:3128;auto;DIRECT"
       # It is advised to change these configs in the cache section of the helm values
       # and leave them unchanged here, so they auto-generate
       CVMFS_QUOTA_LIMIT={{ .Values.cache.localCache.size }}
