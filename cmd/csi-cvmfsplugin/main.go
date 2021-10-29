@@ -31,7 +31,7 @@ func init() {
 
 var (
 	endpoint   = flag.String("endpoint", "unix://tmp/csi.sock", "CSI endpoint")
-	driverName = flag.String("drivername", "csi-cvmfs", "name of the driver") //nolint
+	driverName = flag.String("drivername", "cvmfsDriver", "name of the driver")
 	nodeId     = flag.String("nodeid", "", "node id")
 )
 
@@ -48,7 +48,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	driver := cvmfs.NewDriver(*nodeId, *endpoint)
+	driver := cvmfs.NewDriver(*nodeId, *endpoint, *driverName)
 	driver.Run()
 
 	os.Exit(0)

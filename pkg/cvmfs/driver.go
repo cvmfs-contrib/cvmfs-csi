@@ -24,7 +24,6 @@ import (
 
 const (
 	PluginFolder = "/var/lib/kubelet/plugins/cvmfs.csi.cern.ch"
-	driverName   = "cvmfs.csi.cern.ch"
 	version      = "1.0.1"
 )
 
@@ -40,7 +39,7 @@ type cvmfsDriver struct {
 	cscaps []*csi.ControllerServiceCapability //nolint
 }
 
-func NewDriver(nodeID, endpoint string) *cvmfsDriver {
+func NewDriver(nodeID, endpoint, driverName string) *cvmfsDriver {
 	glog.Infof("Driver: %v version: %v", driverName, version)
 
 	d := &cvmfsDriver{}
