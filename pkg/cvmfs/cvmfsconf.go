@@ -17,14 +17,11 @@
 package cvmfs
 
 import (
+	"github.com/golang/glog"
 	"io/ioutil"
 	"os"
 	"path"
 	"text/template"
-)
-
-const (
-	cvmfsConfigRoot = "/etc/cvmfs"
 )
 
 const repoConf = `
@@ -35,7 +32,7 @@ const repoConf = `
 CVMFS_HTTP_PROXY={{.Proxy}}
 {{end}}
 
-CVMFS_CACHE_BASE={{cacheBase .VolumeId}}
+CVMFS_CACHE_BASE={{.CachePath}}
 
 {{if .Hash}}
 CVMFS_ROOT_HASH={{.Hash}}
@@ -48,6 +45,10 @@ var (
 	repoConfTempl *template.Template
 )
 
+func getVolumeCachePath(cvmfsCacheRoot, volId string) string {
+	return path.Join(cvmfsCacheRoot, "csi-"+volId)
+}
+
 func init() {
 	fs := map[string]interface{}{
 		"fileContents": func(filePath string) string {
@@ -57,20 +58,21 @@ func init() {
 				return string(c)
 			}
 		},
-		"cacheBase": getVolumeCachePath,
 	}
 
 	repoConfTempl = template.Must(template.New("repo-conf").Funcs(fs).Parse(repoConf))
 }
 
 type cvmfsConfigData struct {
-	VolumeId  volumeID
+	VolumeId  string
 	Tag, Hash string
 	Proxy     string
+	CachePath string
 }
 
-func (d *cvmfsConfigData) writeToFile() error {
-	f, err := os.OpenFile(getConfigFilePath(d.VolumeId), os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0755)
+func (d *cvmfsConfigData) writeToFile(path string) error {
+	f, err := os.OpenFile(path, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0755)
+	glog.Infof("writing to %s", path)
 	if err != nil {
 		if os.IsExist(err) {
 			return nil
@@ -81,8 +83,4 @@ func (d *cvmfsConfigData) writeToFile() error {
 	defer f.Close()
 
 	return repoConfTempl.Execute(f, d)
-}
-
-func getConfigFilePath(volId volumeID) string {
-	return path.Join(cvmfsConfigRoot, "config-csi-"+string(volId))
 }

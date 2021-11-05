@@ -24,46 +24,38 @@ import (
 
 const (
 	PluginFolder = "/var/lib/kubelet/plugins/cvmfs.csi.cern.ch"
-	version      = "1.0.1"
+	version      = "1.2.0"
 )
 
 type cvmfsDriver struct {
-	driver   *csicommon.CSIDriver
-	endpoint string
+	driver         *csicommon.CSIDriver
+	endpoint       string
+	cvmfsCacheRoot string
+	Name           string
 
-	is *identityServer   //nolint
-	ns *nodeServer       //nolint
-	cs *controllerServer //nolint
+	ns *nodeServer
+	cs *controllerServer
 
-	caps   []*csi.VolumeCapability_AccessMode //nolint
-	cscaps []*csi.ControllerServiceCapability //nolint
+	caps   []*csi.VolumeCapability_AccessMode
+	cscaps []*csi.ControllerServiceCapability
 }
 
-func NewDriver(nodeID, endpoint, driverName string) *cvmfsDriver {
+func NewDriver(nodeID, endpoint, driverName, cvmfsCacheRoot string) *cvmfsDriver {
 	glog.Infof("Driver: %v version: %v", driverName, version)
-
-	d := &cvmfsDriver{}
-
-	d.endpoint = endpoint
 
 	csiDriver := csicommon.NewCSIDriver(driverName, version, nodeID)
 	csiDriver.AddVolumeCapabilityAccessModes([]csi.VolumeCapability_AccessMode_Mode{csi.VolumeCapability_AccessMode_MULTI_NODE_READER_ONLY})
 	csiDriver.AddControllerServiceCapabilities([]csi.ControllerServiceCapability_RPC_Type{csi.ControllerServiceCapability_RPC_CREATE_DELETE_VOLUME})
 
 	// Create gRPC servers
-
-	d.driver = csiDriver
-
-	return d
-}
-
-func NewNodeServer(d *cvmfsDriver) *nodeServer {
-	return &nodeServer{
-		DefaultNodeServer: csicommon.NewDefaultNodeServer(d.driver),
+	return &cvmfsDriver{
+		Name:           driverName,
+		endpoint:       endpoint,
+		cvmfsCacheRoot: cvmfsCacheRoot,
+		driver:         csiDriver,
 	}
 }
 
 func (d *cvmfsDriver) Run() {
-
 	csicommon.RunControllerandNodePublishServer(d.endpoint, d.driver, NewControllerServer(d), NewNodeServer(d))
 }

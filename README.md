@@ -33,6 +33,7 @@ Option | Default value | Description
 `--endpoint` | `unix://tmp/csi.sock` | CSI endpoint, must be a UNIX socket
 `--drivername` | `csi-cvmfsplugin` | name of the driver (Kubernetes: `provisioner` field in StorageClass must correspond to this value)
 `--nodeid` | _empty_ | This node's ID
+`--cvmfsCacheRoot` | `/var/cache/cvmfs` | local CVMFS cache path
 
 **Available volume parameters:**
 

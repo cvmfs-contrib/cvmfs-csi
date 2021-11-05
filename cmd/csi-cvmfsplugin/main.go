@@ -30,9 +30,10 @@ func init() {
 }
 
 var (
-	endpoint   = flag.String("endpoint", "unix://tmp/csi.sock", "CSI endpoint")
-	driverName = flag.String("drivername", "cvmfsDriver", "name of the driver")
-	nodeId     = flag.String("nodeid", "", "node id")
+	endpoint       = flag.String("endpoint", "unix://tmp/csi.sock", "CSI endpoint")
+	driverName     = flag.String("drivername", "cvmfsDriver", "name of the driver")
+	nodeId         = flag.String("nodeid", "", "node id")
+	cvmfsCacheRoot = flag.String("cvmfsCacheRoot", "/var/cache/cvmfs", "local CVMFS cache path")
 )
 
 func main() {
@@ -48,7 +49,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	driver := cvmfs.NewDriver(*nodeId, *endpoint, *driverName)
+	driver := cvmfs.NewDriver(*nodeId, *endpoint, *driverName, *cvmfsCacheRoot)
 	driver.Run()
 
 	os.Exit(0)
