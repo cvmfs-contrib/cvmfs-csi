@@ -63,12 +63,6 @@ func NewNodeServer(d *cvmfsDriver) *nodeServer {
 	}
 }
 
-func NewIdentityServer(d *cvmfsDriver) *identityServer {
-	return &identityServer{
-		DefaultIdentityServer: csicommon.NewDefaultIdentityServer(d.driver),
-	}
-}
-
 func (d *cvmfsDriver) Run() {
 
 	csicommon.RunControllerandNodePublishServer(d.endpoint, d.driver, NewControllerServer(d), NewNodeServer(d))
