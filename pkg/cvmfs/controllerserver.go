@@ -17,8 +17,10 @@ package cvmfs
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/golang/glog"
+	"github.com/pborman/uuid"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -28,35 +30,61 @@ import (
 
 type controllerServer struct {
 	*csicommon.DefaultControllerServer
+	Name string
+}
+
+func NewControllerServer(d *cvmfsDriver) *controllerServer {
+	return &controllerServer{
+		DefaultControllerServer: csicommon.NewDefaultControllerServer(d.driver),
+		Name:                    d.Name,
+	}
 }
 
 func (cs *controllerServer) CreateVolume(ctx context.Context, req *csi.CreateVolumeRequest) (*csi.CreateVolumeResponse, error) {
-	if err := cs.validateCreateVolumeRequest(req); err != nil {
+	var err error
+	if e := cs.Driver.ValidateControllerServiceRequest(csi.ControllerServiceCapability_RPC_CREATE_DELETE_VOLUME); e != nil {
+		err = fmt.Errorf("invalid CreateVolumeRequest: %v", e)
+	}
+
+	name := req.GetName()
+
+	if name == "" {
+		err = fmt.Errorf("volume name cannot be empty")
+	}
+
+	if err != nil {
 		glog.Errorf("failed to validate CreateVolumeRequest: %v", err)
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	volId := newVolumeID()
+	volId := "csi-cvmfs-" + name + "-" + uuid.NewUUID().String()
 
-	glog.Infof("cvmfs: successfuly created volume %s", volId)
+	glog.Infof("cvmfs: Assigned new volume ID (%s) to volume %s", volId, name)
 
 	return &csi.CreateVolumeResponse{
 		Volume: &csi.Volume{
-			VolumeId:      string(volId),
+			VolumeId:      volId,
 			VolumeContext: req.GetParameters(),
 			CapacityBytes: req.GetCapacityRange().GetRequiredBytes(),
 		},
 	}, nil
 }
 
+func (cs *controllerServer) ControllerGetVolume(ctx context.Context, request *csi.ControllerGetVolumeRequest) (*csi.ControllerGetVolumeResponse, error) {
+	// TODO this is largely stubbed and needs more refinement
+	return &csi.ControllerGetVolumeResponse{
+		Volume: &csi.Volume{
+			VolumeId:      request.VolumeId,
+			CapacityBytes: 0,
+		},
+	}, nil
+}
+
 func (cs *controllerServer) DeleteVolume(ctx context.Context, req *csi.DeleteVolumeRequest) (*csi.DeleteVolumeResponse, error) {
-	if err := cs.validateDeleteVolumeRequest(req); err != nil {
+	if err := cs.Driver.ValidateControllerServiceRequest(csi.ControllerServiceCapability_RPC_CREATE_DELETE_VOLUME); err != nil {
 		glog.Errorf("failed to validate DeleteVolumeRequest: %v", err)
-		return nil, status.Error(codes.InvalidArgument, err.Error())
+		return nil, status.Error(codes.InvalidArgument, fmt.Errorf("invalid DeleteVolumeRequest: %v", err).Error())
 	}
-
-	glog.Infof("cvmfs: successfuly deleted volume %s", req.GetVolumeId())
-
 	return &csi.DeleteVolumeResponse{}, nil
 }
 
@@ -70,17 +98,19 @@ func (cs *controllerServer) ValidateVolumeCapabilities(
 		}
 	}
 
-	supportedAccessMode := &csi.VolumeCapability_AccessMode{
-		Mode: csi.VolumeCapability_AccessMode_MULTI_NODE_READER_ONLY,
-	}
-
 	return &csi.ValidateVolumeCapabilitiesResponse{
 		Confirmed: &csi.ValidateVolumeCapabilitiesResponse_Confirmed{
 			VolumeCapabilities: []*csi.VolumeCapability{
 				{
-					AccessMode: supportedAccessMode,
+					AccessMode: &csi.VolumeCapability_AccessMode{
+						Mode: csi.VolumeCapability_AccessMode_MULTI_NODE_READER_ONLY,
+					},
 				},
 			},
 		},
 	}, nil
+}
+
+func (cs *controllerServer) ControllerExpandVolume(ctx context.Context, request *csi.ControllerExpandVolumeRequest) (*csi.ControllerExpandVolumeResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "")
 }
