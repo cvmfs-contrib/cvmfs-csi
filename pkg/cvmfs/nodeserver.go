@@ -69,6 +69,72 @@ func getConfigFilePath(volId string) string {
 	return path.Join(cvmfsConfigRoot, "config-"+volId)
 }
 
+func (ns *nodeServer) stage(stagingTargetPath, volId string, options map[string]string) error {
+	var repository string
+	var ok bool
+	var err error
+	if repository, ok = options["repository"]; !ok {
+		msg := "missing required field 'repository'"
+		glog.Errorf("invalid volume attributes for volume %s: %s", volId, msg)
+		return status.Error(codes.InvalidArgument, msg)
+	}
+
+	cachePath := getVolumeCachePath(ns.cvmfsCacheRoot, volId)
+	confData := cvmfsConfigData{
+		VolumeId:  volId,
+		Tag:       options["tag"],
+		Hash:      options["hash"],
+		Proxy:     options["proxy"],
+		CachePath: cachePath,
+	}
+
+	if confData.Hash == "" && confData.Tag == "" {
+		confData.Tag = "trunk"
+	}
+
+	if confData.Hash != "" && confData.Tag != "" {
+		msg := "specifying both hash and tag is not allowed"
+		glog.Errorf("invalid volume attributes for volume %s: %s", volId, msg)
+		return status.Error(codes.InvalidArgument, msg)
+	}
+
+	if err = os.MkdirAll(stagingTargetPath, 0755); err != nil {
+		glog.Errorf("failed to create staging path at %s for volume %s: %v", stagingTargetPath, volId, err)
+		return status.Error(codes.Internal, err.Error())
+	}
+
+	if notMount, e := ns.mounter.IsLikelyNotMountPoint(stagingTargetPath); notMount && e == nil {
+		// Write config for specific mount
+		configPath := getConfigFilePath(volId)
+		if err = confData.writeToFile(configPath); err != nil {
+			glog.Errorf("failed to write volume config: %v", err)
+			return status.Error(codes.Internal, err.Error())
+		}
+
+		// Each mount requires its own cache path
+		err = os.MkdirAll(cachePath, 0755)
+		if err == nil {
+			err = os.Chown(cachePath, cvmfsUid, 0)
+		}
+		if err != nil {
+			glog.Errorf("failed to create cache for volume %s: %v", volId, err)
+			return status.Error(codes.Internal, err.Error())
+		}
+
+		// Mount the cvmfs repo directly to the stage with the custom config
+		if err = ns.mounter.Mount(repository, stagingTargetPath, "cvmfs", []string{"config=" + configPath}); err != nil {
+			glog.Errorf("failed to mount volume: %v", err)
+			return status.Error(codes.Internal, err.Error())
+		}
+	} else if e != nil {
+		glog.Errorf("failed to determine if %s is already mounted to %s: %v", volId, stagingTargetPath, err)
+		return status.Error(codes.Internal, err.Error())
+	}
+
+	glog.V(5).Infof("cvmfs: successfuly mounted volume %s to %s", volId, stagingTargetPath)
+	return nil
+}
+
 // NodeStageVolume stages the CVMFS repo mount with a custom configuration
 func (ns *nodeServer) NodeStageVolume(ctx context.Context, req *csi.NodeStageVolumeRequest) (*csi.NodeStageVolumeResponse, error) {
 	stagingTargetPath := req.GetStagingTargetPath()
@@ -92,67 +158,10 @@ func (ns *nodeServer) NodeStageVolume(ctx context.Context, req *csi.NodeStageVol
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	var repository string
-	var ok bool
-	if repository, ok = options["repository"]; !ok {
-		msg := "missing required field 'repository'"
-		glog.Errorf("invalid volume attributes for volume %s: %s", volId, msg)
-		return nil, status.Error(codes.InvalidArgument, msg)
+	err = ns.stage(stagingTargetPath, volId, options)
+	if err != nil {
+		return nil, err
 	}
-
-	cachePath := getVolumeCachePath(ns.cvmfsCacheRoot, volId)
-	confData := cvmfsConfigData{
-		VolumeId:  volId,
-		Tag:       options["tag"],
-		Hash:      options["hash"],
-		Proxy:     options["proxy"],
-		CachePath: cachePath,
-	}
-
-	if confData.Hash == "" && confData.Tag == "" {
-		confData.Tag = "trunk"
-	}
-
-	if confData.Hash != "" && confData.Tag != "" {
-		msg := "specifying both hash and tag is not allowed"
-		glog.Errorf("invalid volume attributes for volume %s: %s", volId, msg)
-		return nil, status.Error(codes.InvalidArgument, msg)
-	}
-
-	if err = os.MkdirAll(stagingTargetPath, 0755); err != nil {
-		glog.Errorf("failed to create staging path at %s for volume %s: %v", stagingTargetPath, volId, err)
-		return nil, status.Error(codes.Internal, err.Error())
-	}
-
-	if notMount, e := ns.mounter.IsLikelyNotMountPoint(stagingTargetPath); notMount && e == nil {
-		// Write config for specific mount
-		configPath := getConfigFilePath(volId)
-		if err = confData.writeToFile(configPath); err != nil {
-			glog.Errorf("failed to write volume config: %v", err)
-			return nil, status.Error(codes.Internal, err.Error())
-		}
-
-		// Each mount requires its own cache path
-		err = os.MkdirAll(cachePath, 0755)
-		if err == nil {
-			err = os.Chown(cachePath, cvmfsUid, 0)
-		}
-		if err != nil {
-			glog.Errorf("failed to create cache for volume %s: %v", volId, err)
-			return nil, status.Error(codes.Internal, err.Error())
-		}
-
-		// Mount the cvmfs repo directly to the stage with the custom config
-		if err = ns.mounter.Mount(repository, stagingTargetPath, "cvmfs", []string{"config=" + configPath}); err != nil {
-			glog.Errorf("failed to mount volume: %v", err)
-			return nil, status.Error(codes.Internal, err.Error())
-		}
-	} else if e != nil {
-		glog.Errorf("failed to determine if %s is already mounted to %s: %v", volId, stagingTargetPath, err)
-		return nil, status.Error(codes.Internal, err.Error())
-	}
-
-	glog.V(5).Infof("cvmfs: successfuly mounted volume %s to %s", volId, stagingTargetPath)
 
 	return &csi.NodeStageVolumeResponse{}, nil
 }
@@ -188,6 +197,14 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 	if err = os.MkdirAll(targetPath, 0755); err != nil {
 		glog.Errorf("failed to create bind mount target path at %s for volume %s: %v", targetPath, volId, err)
 		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	if notMount, _ := ns.mounter.IsLikelyNotMountPoint(stagingTargetPath); notMount {
+		glog.Errorf("Attempting to publish unstaged volume %s at %s. Staging first..", volId, stagingTargetPath)
+		err = ns.stage(stagingTargetPath, volId, req.GetVolumeContext())
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	if notMount, e := ns.mounter.IsLikelyNotMountPoint(targetPath); notMount && e == nil {
@@ -228,9 +245,11 @@ func (ns *nodeServer) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpu
 	}
 
 	// Unbind the volume
-	if err := ns.mounter.Unmount(targetPath); err != nil {
-		glog.Errorf("failed to unbind volume %s: %v", targetPath, err)
-		return nil, status.Error(codes.Internal, err.Error())
+	if _, err := os.Stat(targetPath); os.IsExist(err) {
+		if err := ns.mounter.UnmountWithForce(targetPath, unmountTimeout); err != nil {
+			glog.Errorf("failed to unbind volume %s: %v", targetPath, err)
+			return nil, status.Error(codes.Internal, err.Error())
+		}
 	}
 
 	// Clean up
@@ -264,9 +283,11 @@ func (ns *nodeServer) NodeUnstageVolume(ctx context.Context, req *csi.NodeUnstag
 	}
 
 	// Unmount the volume
-	if err := ns.mounter.UnmountWithForce(stagingTargetPath, unmountTimeout); err != nil {
-		glog.Errorf("failed unmount volume %s: %v", volId, err)
-		return nil, status.Error(codes.Internal, err.Error())
+	if _, err := os.Stat(stagingTargetPath); os.IsExist(err) {
+		if err := ns.mounter.UnmountWithForce(stagingTargetPath, unmountTimeout); err != nil {
+			glog.Errorf("failed unmount volume %s: %v", volId, err)
+			return nil, status.Error(codes.Internal, err.Error())
+		}
 	}
 
 	// Clean up
