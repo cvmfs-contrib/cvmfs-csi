@@ -1,0 +1,53 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: cvmfs-controllerplugin
+  labels:
+    app: cvmfs-csi
+    component: controllerplugin
+---
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: cvmfs-csi-controllerplugin-provisioner
+  labels:
+    app: cvmfs-csi
+    component: controllerplugin
+rules:
+  - apiGroups: [""]
+    resources: ["persistentvolumes"]
+    verbs: ["get", "list", "watch", "create", "delete"]
+  - apiGroups: [""]
+    resources: ["persistentvolumeclaims"]
+    verbs: ["get", "list", "watch", "update"]
+  - apiGroups: ["storage.k8s.io"]
+    resources: ["storageclasses"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["nodes"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["storage.k8s.io"]
+    resources: ["csinodes"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["events"]
+    verbs: ["list", "watch", "create", "update", "patch"]
+  - apiGroups: ["coordination.k8s.io"]
+    resources: ["leases"]
+    verbs: ["get", "watch", "list", "delete", "update", "create"]
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: cvmfs-csi-controllerplugin-provisioner
+  labels:
+    app: cvmfs-csi
+    component: controllerplugin
+subjects:
+  - kind: ServiceAccount
+    name: cvmfs-controllerplugin
+    namespace: default
+roleRef:
+  kind: ClusterRole
+  name: cvmfs-csi-controllerplugin-provisioner
+  apiGroup: rbac.authorization.k8s.io

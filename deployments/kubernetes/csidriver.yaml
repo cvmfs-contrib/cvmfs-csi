@@ -1,0 +1,9 @@
+apiVersion: storage.k8s.io/v1
+kind: CSIDriver
+metadata:
+  name: cvmfs.csi.cern.ch
+  labels:
+    app: cvmfs-csi
+spec:
+  attachRequired: false
+  podInfoOnMount: false
