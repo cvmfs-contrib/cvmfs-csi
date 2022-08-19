@@ -1,0 +1,26 @@
+{{- if (index .Values.cvmfsConfig "default.local" "create") }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "cvmfs-csi.cm.default.local" . }}
+  labels:
+    {{- include "cvmfs-csi.common.metaLabels" .  | nindent 4 }}
+data:
+  default.local: |
+    {{- tpl (index .Values.cvmfsConfig "default.local" "data" "default.local") . | nindent 4 -}}
+{{- end }}
+{{- if (index .Values.cvmfsConfig "config.d" "create") }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "cvmfs-csi.cm.config.d" . }}
+  labels:
+    {{- include "cvmfs-csi.common.metaLabels" .  | nindent 4 }}
+data:
+  {{- range $path, $data := (index .Values.cvmfsConfig "config.d" "data") -}}
+  {{- $path | nindent 2 }}: |
+    {{- tpl $data $ | nindent 4 -}}
+  {{- end }}
+{{- end }}

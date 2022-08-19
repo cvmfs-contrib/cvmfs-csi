@@ -1,107 +1,254 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
-# All contents will be run through tpl
-# All mountPaths are relative to /etc/cvmfs/
-configs:
-  defaultLocal:
-    mountPath: default.local
-    contents: |
-      CVMFS_SERVER_URL="http://cvmfs-stratum-one.cern.ch/cvmfs/@fqrn@;http://cernvmfs.gridpp.rl.ac.uk/cvmfs/@fqrn@;http://cvmfs.racf.bnl.gov/cvmfs/@fqrn@;http://cvmfs.fnal.gov/cvmfs/@fqrn@"
-      CVMFS_KEYS_DIR=/etc/cvmfs/keys/cern.ch
-      CVMFS_USE_GEOAPI=yes
+# CVMFS configuration to be sourced into /etc/cvmfs.
+# It is exposed as a set of ConfigMaps deployed in the same namespace
+# as the CVMFS CSI driver.
+cvmfsConfig:
 
-      CVMFS_HTTP_PROXY="http://ca-proxy.cern.ch:3128"
-      # It is advised to change these configs in the cache section of the helm values
-      # and leave them unchanged here, so they auto-generate
-      CVMFS_QUOTA_LIMIT={{ .Values.cache.localCache.size }}
-      CVMFS_CACHE_BASE={{ .Values.cache.localCache.mountPath }}
-      {{- if .Values.cache.alienCache.enabled }}
-      CVMFS_ALIEN_CACHE={{ .Values.cache.alienCache.mountPath }}
-      # When alien cache is used, CVMFS does not control the size of the cache
-      CVMFS_QUOTA_LIMIT=-1
-      # For clarification, this is referencing whether repositories
-      # should share a cache directory or each have their own
-      CVMFS_SHARED_CACHE=no
-      {{- end -}}
-  cernKey:
-    mountPath: keys/cern.ch/repository.cern.ch.pub
-    contents: |
-      -----BEGIN PUBLIC KEY-----
-      MIGeMA0GCSqGSIb3DQEBAQUAA4GMADCBiAKBgHvy9PFYteIdwD5OxEosZoqpSUxP
-      LddA+zRwD0lWfavbFoCJOJS23zPpIimQ0gzH3FAebR3x9JzVVa3JFLxIUj4Fv3d6
-      /3fWhyK4Nmxc7B1Qh7wrRYlYtcDszGGk2DB0ETI83Jbzvfx1slvhMkqjWQ0c30w8
-      BWglnUvav0hRRwJRAgMBAAE=
-      -----END PUBLIC KEY-----
+  # ConfigMap for /etc/cvmfs/default.local file.
+  default.local:
 
-# A storage class will be created for each repository
-repositories:
-  # The key will be used for the storage class name
-  # The value will be used for the repository
-  cern-repo: repository.cern.ch
+    # Name of the ConfigMap (to use or create).
+    # If left empty, a name will be generated
+    # using the cvmfs-csi.fullname template.
+    configMapName: cvmfs-csi-default-local
 
+    # Whether to use this ConfigMap in /etc/cvmfs/default.local.
+    use: true
+
+    # Whether to create default.local ConfigMap with data entries defined below.
+    # If not, and `use` is set to true, it is expected the ConfigMap is already present.
+    create: true
+
+    data:
+
+      default.local: |
+        CVMFS_USE_GEOAPI=yes
+        CVMFS_HTTP_PROXY="http://ca-proxy.cern.ch:3128"
+
+        # It is advised to change these configs in the cache section of the helm values
+        # and leave them unchanged here, so they auto-generate.
+        CVMFS_QUOTA_LIMIT={{ .Values.cache.local.cvmfsQuotaLimit }}
+        CVMFS_CACHE_BASE=/cvmfs-localcache
+
+        {{- if .Values.cache.alien.enabled }}
+        CVMFS_ALIEN_CACHE=/cvmfs-aliencache
+        # When alien cache is used, CVMFS does not control the size of the cache.
+        CVMFS_QUOTA_LIMIT=-1
+        # Whether repositories should share a cache directory or each have their own.
+        CVMFS_SHARED_CACHE=no
+        {{- end -}}
+
+  # ConfigMap for /etc/cvmfs/config.d directory.
+  config.d:
+
+    # Name of the ConfigMap (to use or create).
+    # If left empty, a name will be generated
+    # using the cvmfs-csi.fullname template.
+    configMapName: cvmfs-csi-config-d
+
+    # Whether to use this ConfigMap in /etc/cvmfs/config.d.
+    use: true
+
+    # Whether to create ConfigMap with data entries defined below.
+    create: true
+
+    data: {}
+
+      # CERN
+
+      # cern.ch.conf: |
+      #   CVMFS_SERVER_URL="http://cvmfs-stratum-one.cern.ch/cvmfs/@fqrn@;http://cernvmfs.gridpp.rl.ac.uk/cvmfs/@fqrn@;http://cvmfs.racf.bnl.gov/cvmfs/@fqrn@;http://cvmfs.fnal.gov/cvmfs/@fqrn@"
+      #   CVMFS_PUBLIC_KEY='/etc/cvmfs/config.d/cern.ch.pub'
+
+      # cern.ch.pub: |
+      #   -----BEGIN PUBLIC KEY-----
+      #   MIGeMA0GCSqGSIb3DQEBAQUAA4GMADCBiAKBgHvy9PFYteIdwD5OxEosZoqpSUxP
+      #   LddA+zRwD0lWfavbFoCJOJS23zPpIimQ0gzH3FAebR3x9JzVVa3JFLxIUj4Fv3d6
+      #   /3fWhyK4Nmxc7B1Qh7wrRYlYtcDszGGk2DB0ETI83Jbzvfx1slvhMkqjWQ0c30w8
+      #   BWglnUvav0hRRwJRAgMBAAE=
+      #   -----END PUBLIC KEY-----
+
+# Cache configuration for storing CVMFS client data.
+# CVMFS CSI supports two kinds of caches:
+# * Local: each CVMFS CSI DaemonSet Pod gets its own volume to store
+#   client cache. ReadWriteOnce access mode for persistent volumes is sufficient.
+# * Alien: optional shared volume for all CVMFS clients. ReadWriteMany access
+#   mode for the volume is required. You can learn more about alien cache at
+#   https://cvmfs.readthedocs.io/en/stable/cpt-configure.html#alien-cache
 cache:
-  # If both local and alien cache are disabled, ephemeral
-  # storage (emptyDir volume) will be used for caching
-  # Requires a ReadWriteOnce volume for the local cache
-  # localCache can not be used in a multi-node setup unless
-  # the cache PVs are defined manually for all pods of the DaemonSet.
-  # If local cache is enabled, alien cache must be disabled.
-  localCache:
+  local:
+    volumeSpec:
+      emptyDir: {}
+    # Maximum size of local cache in MiB.
+    # CVMFS client will garbage collect the exceeding amount.
+    cvmfsQuotaLimit: 1000
+  alien:
     enabled: false
-    storageClass: ""
-    # size in Mi, will propagate to both default.local and PV/PVC size
-    size: 10000
-    mountPath: /mnt/cvmfs/localcache
-  # Optional shared ReadWriteMany cache volume.
-  # If alien cache is enabled, local cache must be disabled.
-  # An emptyDir ephemeral volume will be used for local
-  # control files for each pod scaled by the DaemonSet on
-  # each node. The alien cache volume will be shared
-  # among all the CVMFS clients running on the different nodes.
-  # Read more about alien cache limitations at:
-  # https://cvmfs.readthedocs.io/en/stable/cpt-configure.html#alien-cache
-  alienCache:
-    enabled: false
-    size: 10000 # in Mi
-    storageClass: nfs
-    mountPath: /mnt/cvmfs/aliencache
-  preload:
-    enabled: true
-    repositories:
-      # - name: repository.cern.ch
-      #   mountPath: /cvmfs/repository.cern.ch
-      #   # Docker image with cvmfs_preload binary pre-installed
-      #   image: almahmoud/cvmfs_preload:latest
-      #   mountConfigs:
-      #     - defaultLocal
-      #     - cernKey
-      #   mountCache: true
-      #   commands:
-      #     - cvmfs_preload -u http://cvmfs-stratum-zero.cern.ch/cvmfs/repository.cern.ch -r /mnt/cvmfs/aliencache -k /etc/cvmfs/keys/cern.ch
+    volumeSpec:
+      persistentVolumeClaim:
+        claimName: cvmfs-alien-cache
 
-# Advanced settings
-# Changing these settings is not advised unless you know what you are doing
-csiPlugin:
-  # This image includes the patch to the plugin allowing
-  # for multiple PVCs across multiple namespaces
-  # https://github.com/cernops/cvmfs-csi/commit/c680862082738aba1469707a891a6f7fecf72f53
-  image: cloudve/csi-cvmfsplugin:v1.0.1
-  args:
-    - "--nodeid=$(NODE_ID)"
-    - "--endpoint=$(CSI_ENDPOINT)"
-    - "--v=5"
-    - "--drivername=cvmfs.csi.cern.ch"
-  pluginDirectory: /var/lib/kubelet/plugins/cvmfs.csi.cern.ch
-  nodeDriverImage: quay.io/k8scsi/csi-node-driver-registrar:v1.0.2
-csiAttacher:
-  image: quay.io/k8scsi/csi-attacher:v1.0.1
-  args:
-    - "--v=5"
-    - "--csi-address=$(ADDRESS)"
-csiProvisioner:
-  image: quay.io/k8scsi/csi-provisioner:v1.0.1
-  args:
-    - "--provisioner=cvmfs.csi.cern.ch"
-    - "--csi-address=$(ADDRESS)"
-    - "--v=5"
+# CSI Node plugin DaemonSet configuration.
+# Node plugin handles node-local operations, e.g. mounting and unmounting
+# CVMFS repositories.
+nodeplugin:
+
+  # Component name. Used as `component` label value
+  # and to generate DaemonSet name.
+  name: nodeplugin
+
+  # CVMFS CSI image and container resources specs.
+  plugin:
+    image:
+      repository: registry.cern.ch/magnum/cvmfs-csi
+      tag: v2.0.0
+      pullPolicy: IfNotPresent
+    resources: {}
+
+  # csi-node-driver-registrar image and container resources specs.
+  registrar:
+    image:
+      repository: registry.k8s.io/sig-storage/csi-node-driver-registrar
+      tag: v2.5.1
+      pullPolicy: IfNotPresent
+    resources: {}
+
+  # DaemonSet update strategy.
+  updateStrategySpec:
+    # When CVMFS Node plugin Pod is restarted, all existing CVMFS mounts on
+    # that node will break. If the Node plugin DaemonSet needs to be updated,
+    # all Pods that mount CVMFS volumes on that node must be restarted (deleted)
+    # too in order to refresh the mounts.
+    type: OnDelete
+
+  # Pod priority class name.
+  priorityClassName: system-node-critical
+
+  # Pod node selector.
+  nodeSelector: {}
+
+  # Pod node tolerations.
+  tolerations: []
+
+  # Pod node affinity.
+  affinity: {}
+
+  # hostPID must be enabled for automounts to work. If disabled,
+  # it is only possible to do single-repository mounts using
+  # `repository` volume attribute (see docs/how-to-use.md for
+  # more details).
+  hostPID: true
+
+  # (deprecated) ServiceAccount to use with Node plugin DaemonSet.
+  # New CVMFS CSI deployments do not need this. It is only necessary
+  # when upgrading from v1 of the driver.
+  serviceAccount:
+
+    # Name of the ServiceAccount (to use and/or create).
+    # If no name is provided, Helm chart will generate one.
+    serviceAccountName: cvmfs-nodeplugin
+
+    # Whether to create ServiceAccount in the CVMFS CSI namespace.
+    # If not, and `use` is set to true, it is expected the ServiceAccount is already present.
+    create: false
+
+    # Whether to use this ServiceAccount in Node plugin DaemonSet.
+    use: false
+
+# CSI Controller plugin Deployment configuration.
+# CVMFS CSI supports volume provisioning, however the provisioned volumes only fulfill the role
+# of a reference to CVMFS repositories used inside the CO (e.g. Kubernetes), and are not modifying
+# the CVMFS store in any way.
+controllerplugin:
+
+  # Component name. Used as `component` label value
+  # and to generate DaemonSet name.
+  name: controllerplugin
+
+  # Number of Deployment replicas. In general, one is sufficient.
+  replicas: 1
+
+  # CVMFS CSI image and container resources specs.
+  plugin:
+    image:
+      repository: registry.cern.ch/magnum/cvmfs-csi
+      tag: v2.0.0
+      pullPolicy: IfNotPresent
+    resources: {}
+
+  # CSI external-provisioner image and container resources specs.
+  provisioner:
+    image:
+      repository: k8s.gcr.io/sig-storage/csi-provisioner
+      tag: v3.2.1
+      pullPolicy: IfNotPresent
+    resources: {}
+
+  # Deployment update strategy.
+  deploymentStrategySpec:
+    type: RollingUpdate
+
+  # Pod priority class name.
+  priorityClassName: ""
+
+  # Pod node selector.
+  nodeSelector: {}
+
+  # Pod node tolerations.
+  tolerations: []
+
+  # Pod node affinity.
+  affinity: {}
+
+  # ServiceAccount to use with Controller plugin Deployment.
+  serviceAccount:
+
+    # Name of the ServiceAccount (to use and/or create).
+    # If no name is provided, Helm chart will generate one.
+    serviceAccountName: ""
+
+    # Whether to create ServiceAccount in the CVMFS CSI namespace.
+    # If not, it is expected the ServiceAccount is already present.
+    create: true
+
+  # RBAC rules assigned to the ServiceAccount defined above.
+  rbac:
+
+    # Whether to create RBACs in the CVMFS CSI namespace.
+    # If not, it is expected they are already present.
+    create: true
+
+# Log verbosity level.
+# See https://github.com/kubernetes/community/blob/master/contributors/devel/sig-instrumentation/logging.md
+# for description of individual verbosity levels.
+logVerbosityLevel: 5
+
+# CVMFS CSI driver name used as driver identifier by Kubernetes.
+# Must follow DNS notation format (https://tools.ietf.org/html/rfc1035#section-2.3.1),
+# and must be 63 characters or less.
+csiDriverName: cvmfs.csi.cern.ch
+
+# Kubelet's plugin directory path. By default, kubelet uses /var/lib/kubelet/plugins.
+# This value may need to be changed if kubelet's root dir (--root-dir) differs from
+# this default path.
+kubeletDirectory: /var/lib/kubelet
+
+# Name of the CVMFS CSI socket file. CVMFS CSI socket file will be stored under
+# <kubeletPluginDirectory>/plugins/<csiDriverName>/<cvmfsCSIPluginSocketFile>.
+cvmfsCSIPluginSocketFile: csi.sock
+
+# Whether CVMFS CSI nodeplugin Pod should run automount daemon. This is required
+# for automounts to work. If however worker nodes are already running automount
+# daemon (e.g. as a systemd service), you may disable running yet another instance
+# of the daemon using this switch.
+startAutomountDaemon: true
+
+# Chart name overrides.
+nameOverride: ""
+fullNameOverride: ""
+
+# Extra Kubernetes object metadata labels to be added the ones generated
+# with cvmfs-csi.common.metaLabels template.
+extraMetaLabels: {}
