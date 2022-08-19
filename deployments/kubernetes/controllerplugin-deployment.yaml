@@ -1,0 +1,56 @@
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: cvmfs-csi-controllerplugin
+  labels:
+    app: cvmfs-csi
+    component: controllerplugin
+spec:
+  replicas: 1
+  strategy: 
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      component: controllerplugin
+      app: cvmfs-csi
+  template:
+    metadata:
+      labels:
+        app: cvmfs-csi
+        component: controllerplugin
+    spec:
+      serviceAccount: cvmfs-csi-controllerplugin
+      containers:
+        - name: provisioner
+          image: k8s.gcr.io/sig-storage/csi-provisioner:v3.2.1
+          imagePullPolicy: IfNotPresent
+          args:
+            - -v=5
+            - --csi-address=$(CSI_ADDRESS)
+            - --leader-election=true
+          env:
+            - name: CSI_ADDRESS
+              value: unix:///csi/csi.sock
+          volumeMounts:
+            - name: socket-dir
+              mountPath: /csi
+        - name: controllerplugin
+          image: registry.cern.ch/rvasek/cvmfs-csi:v2
+          imagePullPolicy: Always
+          args:
+            - -v=5
+            - --nodeid=$(NODE_ID)
+            - --endpoint=$(CSI_ENDPOINT)
+            - --drivername=$(CSI_DRIVERNAME)
+            - --role=controller
+          env:
+            - name: CSI_ENDPOINT
+              value: unix:///csi/csi.sock
+            - name: CSI_DRIVERNAME
+              value: cvmfs.csi.cern.ch
+          volumeMounts:
+            - name: socket-dir
+              mountPath: /csi
+      volumes:
+        - name: socket-dir
+          emptyDir: {}
