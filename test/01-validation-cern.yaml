@@ -1,42 +1,29 @@
-apiVersion: storage.k8s.io/v1
-kind: StorageClass
+apiVersion: v1
+kind: PersistentVolume
 metadata:
-  name: csi-cvmfs-atlas
-provisioner: cvmfs.csi.cern.ch
-parameters:
-  repository: atlas.cern.ch
----
-apiVersion: storage.k8s.io/v1
-kind: StorageClass
-metadata:
-  name: csi-cvmfs-cms
-provisioner: cvmfs.csi.cern.ch
-parameters:
-  repository: cms.cern.ch
+  name: cvmfs-default
+spec:
+  csi:
+    driver: cvmfs.csi.cern.ch
+    volumeHandle: cvmfs-default
+  accessModes:
+  - ReadOnlyMany
+  capacity:
+    storage: 1
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: csi-cvmfs-atlas-pvc
+  name: cvmfs
+  namespace: default
 spec:
   accessModes:
   - ReadOnlyMany
   resources:
     requests:
-      storage: 1Gi
-  storageClassName: csi-cvmfs-atlas
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: csi-cvmfs-cms-pvc
-spec:
-  accessModes:
-  - ReadOnlyMany
-  resources:
-    requests:
-      storage: 1Gi
-  storageClassName: csi-cvmfs-cms
+      storage: 1
+  volumeName: cvmfs-default
+  storageClassName: ""
 ---
 apiVersion: batch/v1
 kind: Job
@@ -54,20 +41,18 @@ spec:
          image: busybox
          command: ["/bin/sh", "-c", "cat /cvmfs/atlas.cern.ch/repo/ATLASLocalRootBase/README.INSTALL"]
          volumeMounts:
-           - mountPath: /cvmfs/atlas.cern.ch
-             name: atlas-pvc
+           - mountPath: /cvmfs
+             mountPropagation: HostToContainer
+             name: cvmfs
        - name: cms
          image: busybox
          command: ["/bin/sh", "-c", "cat /cvmfs/cms.cern.ch/README"]
          volumeMounts:
-           - mountPath: /cvmfs/cms.cern.ch
-             name: cms-pvc
+           - mountPath: /cvmfs
+             mountPropagation: HostToContainer
+             name: cvmfs
       volumes:
-      - name: atlas-pvc
+      - name: cvmfs
         persistentVolumeClaim:
-          claimName: csi-cvmfs-atlas-pvc
-          readOnly: true
-      - name: cms-pvc
-        persistentVolumeClaim:
-          claimName: csi-cvmfs-cms-pvc
+          claimName: cvmfs
           readOnly: true
