@@ -1,17 +1,23 @@
 module github.com/cernops/cvmfs-csi
 
-go 1.13
+go 1.17
 
 require (
-	github.com/container-storage-interface/spec v1.0.0
-	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b
-	github.com/kubernetes-csi/csi-lib-utils v0.2.0 // indirect
-	github.com/kubernetes-csi/drivers v1.0.2
-	github.com/pborman/uuid v1.2.0
-	github.com/stretchr/testify v1.5.0 // indirect
-	google.golang.org/grpc v1.27.1
-	k8s.io/apimachinery v0.0.0-20190117220443-572dfc7bdfcb // indirect
-	k8s.io/klog v1.0.0 // indirect
-	k8s.io/kubernetes v1.13.3
-	k8s.io/utils v0.0.0-20181102055113-1bd4f387aa67 // indirect
+	github.com/container-storage-interface/spec v1.6.0
+	github.com/kubernetes-csi/csi-lib-utils v0.11.0
+	google.golang.org/grpc v1.47.0
+	k8s.io/apimachinery v0.24.2
+	k8s.io/klog/v2 v2.60.1
+	k8s.io/mount-utils v0.24.2
+)
+
+require (
+	github.com/go-logr/logr v1.2.0 // indirect
+	github.com/golang/protobuf v1.5.2 // indirect
+	golang.org/x/net v0.0.0-20220127200216-cd36cc0744dd // indirect
+	golang.org/x/sys v0.0.0-20220209214540-3681064d5158 // indirect
+	golang.org/x/text v0.3.7 // indirect
+	google.golang.org/genproto v0.0.0-20210602131652-f16073e35f0c // indirect
+	google.golang.org/protobuf v1.27.1 // indirect
+	k8s.io/utils v0.0.0-20220210201930-3a6ce19ff2f9 // indirect
 )
