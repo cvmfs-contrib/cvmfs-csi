@@ -1,4 +1,4 @@
-A Helm chart for the CVMFS-CSI driver, allowing the mounting of CVMFS repositories in Kubernetes environments. This chart will deploy the CSI driver as a DaemonSet, thus automatically scaling the driver on each cluster node, and will create a StorageClass for each mounted repository. These storage classes can subsequently be leveraged by PersistentVolumeClaims of other pods to mount corrensponding CVMFS repositories.
+A Helm chart for the CVMFS-CSI driver, allowing the mounting of CVMFS repositories in Kubernetes environments. This chart will deploy the CSI driver as a DaemonSet, thus automatically scaling the driver on each cluster node.
 
 ## Use
 
@@ -8,12 +8,12 @@ git clone https://github.com/cernops/cvmfs-csi
 ```
 Helm v2 Installation:
 ```
-helm install --name cvmfs --namespace cvmfs cvmfs-csi/deployments/helm/cvmfs-csi/
+helm install --name cvmfs ./cvmfs-csi/deployments/helm/cvmfs-csi
 ```
 Helm v3 Installation:
 ```
 kubectl create namespace cvmfs
-helm install cvmfs cvmfs-csi/deployments/helm/cvmfs-csi/ --namespace-cvmfs
+helm install cvmfs ./cvmfs-csi/deployments/helm/cvmfs-csi
 ```
 
 ## Configuration
@@ -27,21 +27,51 @@ Alternatively, a YAML file that specifies the values of the parameters can be pr
 
 | Parameter                                    | Description                                                                                                                                                         |
 |----------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `configs`                                    | Dictionary of configmaps to be mounted into the plugin container                                                                                                    |
-| `repositories`                               | Dictionary of the repositories to mount. Each key will be used as the StorageClass name corresponding to the repository                                             |
-| `cache.localCache.enabled`                   | Boolean representing whether the plugin should use a ReadWriteOnce volume for its cache. Ideal for single-node scenarios. Requires `cache.alienCache.enabled=false` |
-| `cache.localCache.storageClass`              | Name of ReadWriteOnce storage class used to provision the local cache volume                                                                                        |
-| `cache.localCache.size`                      | Size of local cache volume in Mi                                                                                                                                    |
-| `cache.localCache.mountPath`                 | Path on plugin pods at which the local cache should be mounted                                                                                                      |
-| `cache.alienCache.enabled`                   | Boolean representing whether the plugin should use a ReadWriteMany volume for its cache. Ideal for multi-node scenarios.  Requires `cache.localCache.enabled=false` |
-| `cache.alienCache.storageClass`              | Name of ReadWriteMany storage class used to provision the alien cache volume                                                                                        |
-| `cache.alienCache.size`                      | Size of alien cache volume in Mi                                                                                                                                    |
-| `cache.alienCache.mountPath`                 | Path on plugin pods at which the alien cache should be mounted                                                                                                      |
-| `cache.preload.enabled`                      | Boolean representing whether to deploy non-blocking K8S Job pods alongside the CSI, used to preload a subset of data into the cache                                 |
-| `cache.preload.repositories`                 | List of repositories for which to preload data into the cache                                                                                                       |
-| `cache.preload.repositories.[].name`         | Name of repository to preload. Must be a repository name. Each repository should only be listed once                                                                |
-| `cache.preload.repositories.[].mountPath`    | Path at which to mount this repository on the Job pods                                                                                                              |
-| `cache.preload.repositories.[].image`        | Name of image to run for the Job pod container                                                                                                                      |
-| `cache.preload.repositories.[].commands`     | List of commands to run inside the Job pod container for this repository                                                                                            |
-| `cache.preload.repositories.[].mountConfigs` | List of configs to mount inside the Job pod container for this repository. Must be list of keys from configs dictionary above                                       |
-| `cache.preload.repositories.[].mountCache`   | Boolean indicating whether to mount the cache repositories into the Job container for this repository                                                               |
+| `cvmfsConfig."default.local".configMapName` | Name of the ConfigMap (to use or create) for /etc/cvmfs/default.local file.                                                                                          |
+| `cvmfsConfig."default.local".use` | Whether to use this ConfigMap in /etc/cvmfs/default.local.                                                                                                                     |
+| `cvmfsConfig."default.local".create` | Whether to create default.local ConfigMap. If not, and `use` is set to true, it is expected the ConfigMap is already present.                                               |
+| `cvmfsConfig."default.local".data` | default.local ConfigMap contents to use when `create` is set to true.                                                                                                         |
+| `cvmfsConfig."config.d".configMapName` | Name of the ConfigMap (to use or create) for /etc/cvmfs/config.d directory.                                                                                               |
+| `cvmfsConfig."config.d".use` | Whether to use this ConfigMap in /etc/cvmfs/config.d.                                                                                                                               |
+| `cvmfsConfig."config.d".create` | Whether to create config.d ConfigMap. If not, and `use` is set to true, it is expected the ConfigMap is already present.                                                         |
+| `cvmfsConfig."config.d".data` | config.d ConfigMap contents to use when `create` is set to true.                                                                                                                   |
+| `cache.local.volumeSpec` | Volume spec for local cache. ReadWriteOnce access mode for persistent volumes is sufficient.                                                                                            |
+| `cache.local.cvmfsQuotaLimit` | Maximum size of local cache in MiB. CVMFS client will garbage collect the exceeding amount.                                                                                        |
+| `cache.alien.enabled` | Whether to use alien cache in deployment.                                                                                                                                                  |
+| `cache.alien.volumeSpec` | Volume spec for local cache. ReadWriteMany access mode for persistent volumes is required.                                                                                              |
+| `nodeplugin.name` | Component name for node plugin component. Used as `component` label value and to generate DaemonSet name.                                                                                      |
+| `nodeplugin.plugin.image.repository` | Container image repository for CVMFS CSI node plugin.                                                                                                                       |
+| `nodeplugin.plugin.image.tag` | Container image tag for CVMFS CSI node plugin.                                                                                                                                     |
+| `nodeplugin.plugin.image.pullPolicy` | Pull policy for CVMFS CSI node plugin image.                                                                                                                                |
+| `nodeplugin.plugin.image.resources` | Resource constraints for the `nodeplugin` container.                                                                                                                         |
+| `nodeplugin.registrar.image.repository` | Container image repository for csi-node-driver-registrar.                                                                                                                |
+| `nodeplugin.registrar.image.tag` | Container image tag for csi-node-driver-registrar.                                                                                                                              |
+| `nodeplugin.registrar.image.pullPolicy` | Pull policy for csi-node-driver-registrar image.                                                                                                                         |
+| `nodeplugin.registrar.image.resources` | Resource constraints for the `registrar` container.                                                                                                                       |
+| `nodeplugin.updateStrategySpec` | DaemonSet update strategy.                                                                                                                                                       |
+| `nodeplugin.priorityClassName` | Pod priority class name of the nodeplugin DaemonSet.                                                                                                                              |
+| `nodeplugin.nodeSelector` | Pod node selector of the nodeplugin DaemonSet.                                                                                                                                         |
+| `nodeplugin.tolerations` | Pod tolerations of the nodeplugin DaemonSet.                                                                                                                                            |
+| `nodeplugin.affinity` | Pod node affinity of the nodeplugin DaemonSet.                                                                                                                                             |
+| `controllerplugin.name` | Component name for controller plugin component. Used as `component` label value and to generate Deployment name.                                                                         |
+| `controllerplugin.plugin.image.repository` | Container image repository for CVMFS CSI controller plugin.                                                                                                           |
+| `controllerplugin.plugin.image.tag` | Container image tag for CVMFS CSI controller plugin.                                                                                                                         |
+| `controllerplugin.plugin.image.pullPolicy` | Pull policy for CVMFS CSI controller plugin image.                                                                                                                    |
+| `controllerplugin.plugin.image.resources` | Resource constraints for the `controllerplugin` container.                                                                                                             |
+| `controllerplugin.provisioner.image.repository` | Container image repository for external-provisioner.                                                                                                             |
+| `controllerplugin.provisioner.image.tag` | Container image tag for external-provisioner.                                                                                                                           |
+| `controllerplugin.provisioner.image.pullPolicy` | Pull policy for external-provisioner image.                                                                                                                      |
+| `controllerplugin.provisioner.image.resources` | Resource constraints for the `provisioner` container.                                                                                                             |
+| `controllerplugin.updateStrategySpec` | Deployment update strategy.                                                                                                                                                |
+| `controllerplugin.priorityClassName` | Pod priority class name of the controllerplugin Deployment.                                                                                                                 |
+| `controllerplugin.nodeSelector` | Pod node selector of the controllerplugin Deployment.                                                                                                                            |
+| `controllerplugin.tolerations` | Pod tolerations of the controllerplugin Deployment.                                                                                                                               |
+| `controllerplugin.affinity` | Pod node affinity of the controllerplugin Deployment.                                                                                                                                |
+| `logVerbosityLevel` | Log verbosity of all containers.                                                                                                                                                             |
+| `csiDriverName` | CVMFS CSI driver name used as driver identifier by Kubernetes.                                                                                                                                   |
+| `kubeletDirectory` | Kubelet's plugin directory path.                                                                                                                                                              |
+| `cvmfsCSIPluginSocketFile` | Name of the CVMFS CSI socket file.                                                                                                                                                    |
+| `startAutomountDaemon` | Whether CVMFS CSI nodeplugin Pod should run automount daemon.                                                                                                                             |
+| `nameOverride` | Chart name override.                                                                                                                                                                              |
+| `fullNameOverride` | Chart name override.                                                                                                                                                                          |
+| `extraMetaLabels` | Extra Kubernetes object metadata labels to be added the ones generated with cvmfs-csi.common.metaLabels template.                                                                              |

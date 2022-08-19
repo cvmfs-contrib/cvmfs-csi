@@ -1,0 +1,150 @@
+kind: DaemonSet
+apiVersion: apps/v1
+metadata:
+  name: {{ include "cvmfs-csi.nodeplugin.fullname" . }}
+  labels:
+    {{- include "cvmfs-csi.nodeplugin.labels" .  | nindent 4 }}
+spec:
+  updateStrategy: {{ toYaml .Values.nodeplugin.updateStrategySpec | nindent 4 }}
+  selector:
+    matchLabels:
+      {{- include "cvmfs-csi.nodeplugin.matchLabels" .  | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "cvmfs-csi.nodeplugin.labels" .  | nindent 8 }}
+    spec:
+      # hostPID is required for autofs to work.
+      hostPID: {{ .Values.nodeplugin.hostPID }}
+      {{- if .Values.nodeplugin.serviceAccount.use }}
+      serviceAccount: {{ include "cvmfs-csi.serviceAccountName.nodeplugin" . }}
+      {{- end }}
+      containers:
+        - name: registrar
+          image: {{ .Values.nodeplugin.registrar.image.repository }}:{{ .Values.nodeplugin.registrar.image.tag }}
+          imagePullPolicy: {{ .Values.nodeplugin.registrar.image.pullPolicy }}
+          args:
+            - -v={{ .Values.logVerbosityLevel }}
+            - --csi-address=$(CSI_ADDRESS)
+            - --kubelet-registration-path=$(KUBELET_CSI_REGISTRATION_PATH)
+          env:
+            - name: CSI_ADDRESS
+              value: /csi/{{ .Values.cvmfsCSIPluginSocketFile }}
+            - name: KUBELET_CSI_REGISTRATION_PATH
+              value: {{ .Values.kubeletDirectory }}/plugins/{{ .Values.csiDriverName }}/{{ .Values.cvmfsCSIPluginSocketFile }}
+          volumeMounts:
+            - name: plugin-dir
+              mountPath: /csi
+            - name: registration-dir
+              mountPath: /registration
+          {{- with .Values.nodeplugin.registrar.resources }}
+          resources: {{ toYaml . | nindent 12 }}
+          {{- end }}
+        - name: nodeplugin
+          image: {{ .Values.nodeplugin.plugin.image.repository }}:{{ .Values.nodeplugin.plugin.image.tag }}
+          args:
+            - -v={{ .Values.logVerbosityLevel }}
+            - --nodeid=$(NODE_ID)
+            - --endpoint=$(CSI_ENDPOINT)
+            - --drivername=$(CSI_DRIVERNAME)
+            - --start-automount-daemon={{ .Values.startAutomountDaemon }}
+            - --role=identity,node
+            {{- if .Values.cache.alien.enabled }}
+            - --has-alien-cache
+            {{- end }}
+          imagePullPolicy: {{ .Values.nodeplugin.plugin.image.pullPolicy }}
+          securityContext:
+            privileged: true
+            capabilities:
+              add: ["SYS_ADMIN"]
+            allowPrivilegeEscalation: true
+          env:
+            - name: NODE_ID
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+            - name: CSI_ENDPOINT
+              value: unix://{{ .Values.kubeletDirectory }}/plugins/{{ .Values.csiDriverName }}/{{ .Values.cvmfsCSIPluginSocketFile }}
+            - name: CSI_DRIVERNAME
+              value: {{ .Values.csiDriverName }}
+          volumeMounts:
+            - name: plugin-dir
+              mountPath: {{ .Values.kubeletDirectory }}/plugins/{{ .Values.csiDriverName }}
+            - name: pods-mount-dir
+              mountPath: /var/lib/kubelet/pods
+              mountPropagation: Bidirectional
+            - mountPath: /sys
+              name: host-sys
+            - name: lib-modules
+              mountPath: /lib/modules
+              readOnly: true
+            - name: host-dev
+              mountPath: /dev
+            - name: cvmfs-localcache
+              mountPath: /cvmfs-localcache
+            {{- if .Values.cache.alien.enabled }}
+            - name: cvmfs-aliencache
+              mountPath: /cvmfs-aliencache
+            {{- end }}
+            {{- if (index .Values.cvmfsConfig "default.local" "use") }}
+            - name: cvmfs-config-default-local
+              mountPath: /etc/cvmfs/default.local
+              subPath: default.local
+            {{- end }}
+            {{- if (index .Values.cvmfsConfig "config.d" "use") }}
+            - name: cvmfs-config-config-d
+              mountPath: /etc/cvmfs/config.d
+            {{- end }}
+          {{- with .Values.nodeplugin.plugin.resources }}
+          resources: {{ toYaml . | nindent 12 }}
+          {{- end }}
+      volumes:
+        - name: plugin-dir
+          hostPath:
+            path: {{ .Values.kubeletDirectory }}/plugins/{{ .Values.csiDriverName }}
+            type: DirectoryOrCreate
+        - name: registration-dir
+          hostPath:
+            path: {{ .Values.kubeletDirectory }}/plugins_registry
+            type: DirectoryOrCreate
+        - name: pods-mount-dir
+          hostPath:
+            path: /var/lib/kubelet/pods
+            type: Directory
+        - name: host-sys
+          hostPath:
+            path: /sys
+        - name: lib-modules
+          hostPath:
+            path: /lib/modules
+        - name: host-dev
+          hostPath:
+            path: /dev
+        - name: cvmfs-localcache
+          {{- toYaml .Values.cache.local.volumeSpec | nindent 10 }}
+        {{- if .Values.cache.alien.enabled }}
+        - name: cvmfs-aliencache
+          {{- toYaml .Values.cache.alien.volumeSpec | nindent 10 }}
+        {{- end }}
+        {{- if (index .Values.cvmfsConfig "default.local" "use") }}
+        - name: cvmfs-config-default-local
+          configMap:
+            name: {{ include "cvmfs-csi.cm.default.local" . }}
+        {{- end }}
+        {{- if (index .Values.cvmfsConfig "config.d" "use") }}
+        - name: cvmfs-config-config-d
+          configMap:
+            name: {{ include "cvmfs-csi.cm.config.d" . }}
+        {{- end }}
+      {{- with .Values.nodeplugin.affinity }}
+      affinity: {{ toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.nodeplugin.nodeSelector }}
+      nodeSelector: {{ toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.nodeplugin.tolerations }}
+      tolerations: {{ toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.nodeplugin.priorityClassName }}
+      priorityClassName: {{ . }}
+      {{- end }}
