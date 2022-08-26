@@ -245,19 +245,21 @@ func (ns *nodeServer) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpu
 	}
 
 	// Unbind the volume
-	if _, err := os.Stat(targetPath); os.IsExist(err) {
+	if _, err := os.Stat(targetPath); !os.IsNotExist(err) {
 		if err := ns.mounter.UnmountWithForce(targetPath, unmountTimeout); err != nil {
 			glog.Errorf("failed to unbind volume %s: %v", targetPath, err)
 			return nil, status.Error(codes.Internal, err.Error())
 		}
-	}
 
-	// Clean up
-	if err := os.Remove(targetPath); err != nil {
-		glog.Errorf("cvmfs: cannot delete target path %s for volume %s: %v", targetPath, volId, err)
-	}
+		// Clean up
+		if err := os.Remove(targetPath); err != nil {
+			glog.Errorf("cvmfs: cannot delete target path %s for volume %s: %v", targetPath, volId, err)
+		}
 
-	glog.V(5).Infof("cvmfs: successfuly unbinded volume %s from %s", volId, targetPath)
+		glog.V(5).Infof("cvmfs: successfuly unbinded volume %s from %s", volId, targetPath)
+	} else {
+		glog.Errorf("cvmfs: cannot unpublish target path %s for volume %s, does not exist", targetPath, volId)
+	}
 
 	return &csi.NodeUnpublishVolumeResponse{}, nil
 }
@@ -268,6 +270,7 @@ func (ns *nodeServer) NodeUnstageVolume(ctx context.Context, req *csi.NodeUnstag
 	stagingTargetPath := req.GetStagingTargetPath()
 	volId := req.GetVolumeId()
 	cachePath := getVolumeCachePath(ns.cvmfsCacheRoot, volId)
+	configPath := getConfigFilePath(volId)
 
 	if volId == "" {
 		err = fmt.Errorf("volume ID missing in request")
@@ -283,27 +286,30 @@ func (ns *nodeServer) NodeUnstageVolume(ctx context.Context, req *csi.NodeUnstag
 	}
 
 	// Unmount the volume
-	if _, err := os.Stat(stagingTargetPath); os.IsExist(err) {
+	if _, err := os.Stat(stagingTargetPath); !os.IsNotExist(err) {
 		if err := ns.mounter.UnmountWithForce(stagingTargetPath, unmountTimeout); err != nil {
 			glog.Errorf("failed unmount volume %s: %v", volId, err)
 			return nil, status.Error(codes.Internal, err.Error())
 		}
+
+		// Cleanup
+		if err := os.Remove(stagingTargetPath); err != nil {
+			glog.Errorf("cvmfs: cannot delete staging target path %s for volume %s: %v", stagingTargetPath, volId, err)
+		}
+
+		glog.V(5).Infof("cvmfs: successfuly unmounted volume %s from %s", volId, stagingTargetPath)
+	} else {
+		glog.Errorf("cvmfs: cannot unmount target path %s for volume %s, does not exist", stagingTargetPath, volId)
 	}
 
 	// Clean up
-	if err := os.Remove(cachePath); err != nil {
+	if err := os.Remove(configPath); err != nil {
 		glog.Errorf("cvmfs: cannot remove config for volume %s: %v", volId, err)
 	}
 
 	if err := os.RemoveAll(cachePath); err != nil {
 		glog.Errorf("cvmfs: cannot delete cache for volume %s: %v", volId, err)
 	}
-
-	if err := os.Remove(stagingTargetPath); err != nil {
-		glog.Errorf("cvmfs: cannot delete staging target path %s for volume %s: %v", stagingTargetPath, volId, err)
-	}
-
-	glog.V(5).Infof("cvmfs: successfuly unmounted volume %s from %s", volId, stagingTargetPath)
 
 	return &csi.NodeUnstageVolumeResponse{}, nil
 }
