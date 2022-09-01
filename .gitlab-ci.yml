@@ -1,107 +1,48 @@
+include:
+- project: 'ci-tools/container-image-ci-templates'
+  file: 'kaniko-image.gitlab-ci.yml'
+  ref: master
+- project: 'ci-tools/container-image-ci-templates'
+  file: 'helm.gitlab-ci.yml'
+  ref: master
+
 stages:
-  - build
-  - image
-  - test
-  - deploy
-  - cleanup
+  - build-bin
+  - build-image
+  - build-chart
 
-before_script:
-  - export CLUSTER_NAME=cvmfs-validation-$(echo $CI_COMMIT_SHA | head -c 6)
-  - export BASE_CLUSTER_TEMPLATE="kubernetes-1.17.2-3"
-  - export OS_AUTH_URL="https://keystone.cern.ch/main/v3"
-  - export OS_IDENTITY_API_VERSION="3"
-  - export OS_USERNAME="svcbuild"
-  - export OS_PASSWORD="$SVCBUILD_PASSWORD"
-  - export OS_PROJECT_NAME="Cloud CI"
-  - export OS_REGION_NAME="cern"
-  - export OS_DEFAULT_DOMAIN_NAME="default"
-  - export OS_TENANT_ID="ec9ce822-d12f-453e-9f18-110652a85798"
-  - export OS_TENANT_NAME="Cloud CI"
-
-build:
-  stage: build
-  image: gitlab-registry.cern.ch/cloud/ciadm:v0.3.6
-  script:
-    - make
-    - make test
+build-bin:
+  stage: build-bin
+  rules:
+    - if: $CI_COMMIT_BRANCH || $CI_COMMIT_TAG
+  image: registry.cern.ch/docker.io/library/golang:1.19
   artifacts:
-    expire_in: '30 minutes'
+    expire_in: '10 minutes'
     paths:
       - bin/csi-cvmfsplugin
-  except:
-    - qa
-    - master
+  script:
+    - make
 
-buildimg:
-  stage: image
+build-image:
+  rules:
+  - if: $CI_COMMIT_TAG
+    variables:
+      PUSH_IMAGE: "true"
+  - if: $CI_COMMIT_BRANCH
+  stage: build-image
+  extends: .build_kaniko
   variables:
-    TO: "${CI_REGISTRY_IMAGE}/cvmfs-csi:${CI_COMMIT_SHORT_SHA}"
-    CONTEXT_DIR: "./"
-    DOCKER_FILE: "deployments/docker/Dockerfile"
-  tags:
-    - docker-image-build
-  script: "echo"
-  dependencies:
-    - build
-  only:
-    - branches
-  except:
-    - master
+    REGISTRY_IMAGE_PATH: "registry.cern.ch/magnum/cvmfs-csi:$CI_COMMIT_TAG"
+    CONTEXT_DIR: "."
+    DOCKER_FILE_NAME: "deployments/docker/Dockerfile"
 
-testk8s:
-  stage: test
-  image: gitlab-registry.cern.ch/cloud/ciadm:v0.3.6
-  script: |
-    LABELS=$(openstack coe cluster template show -f json $BASE_CLUSTER_TEMPLATE | jq --raw-output '.labels | to_entries | map("--labels \(.key)=\(.value)") | join(" ")')
-    openstack coe cluster create $CLUSTER_NAME --cluster-template $BASE_CLUSTER_TEMPLATE --keypair lxplus --node-count 1 --master-count 1 --flavor m2.small $LABELS
-    sleep 10
-    STATUS=$(openstack coe cluster show $CLUSTER_NAME -c status -f value)
-    while [ "${STATUS}" != "CREATE_COMPLETE" ] && [ "${STATUS}" != "CREATE_FAILED" ]
-    do
-      STATUS=$(openstack coe cluster show $CLUSTER_NAME -c status -f value)
-      echo "Current cluster status ... $STATUS $(date)"
-      sleep 10
-    done
-
-    openstack coe cluster show $CLUSTER_NAME
-    openstack coe cluster config $CLUSTER_NAME
-    export KUBECONFIG=config
-
-    for m in $(ls test)
-    do
-      kubectl create --validate=false -f test/${m}
-    done
-    for m in $(ls test)
-    do
-      kubectl wait --for=condition=complete --timeout=600s -l ci=true --all-namespaces job
-    done
-  dependencies:
-    - buildimg
-  except:
-    - master
-    - qa
-
-cleanup test clusters:
-  stage: cleanup
-  image: gitlab-registry.cern.ch/cloud/ciadm:v0.3.6
-  script: |
-    STATUS=$(openstack coe cluster show $CLUSTER_NAME -c status -f value)
-    while true
-    do
-      if [ "${STATUS}" != "DELETE_IN_PROGRESS" ]
-      then
-        openstack coe cluster delete $CLUSTER_NAME || true
-      fi
-      sleep 10
-      if STATUS=$(openstack coe cluster show $CLUSTER_NAME -c status -f value)
-      then
-        echo "Current cluster status ... $STATUS $(date)"
-      else
-        echo "done"
-        break
-      fi
-    done
-  when: always
-  except:
-    - master
-    - qa
+build-chart:
+  rules:
+  - if: $CI_COMMIT_TAG
+    variables:
+      PUSH_CHART: "true"
+  - if: $CI_COMMIT_BRANCH
+  stage: build-chart
+  extends: .deploy_helm
+  variables:
+    REGISTRY_PATH: registry.cern.ch/cern/cvmfs-csi
