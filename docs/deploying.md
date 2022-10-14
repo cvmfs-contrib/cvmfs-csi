@@ -60,5 +60,5 @@ CVMFS CSI driver executable accepts following set of command line arguments:
 |`--nodeid`|_none, required_|(string value) Unique identifier of the node on which the CVMFS CSI node plugin pod is running. Should be set to the value of `Pod.spec.nodeName`.|
 |`--has-alien-cache`|_false_|(boolean value) CVMFS client is using alien cache volume. The volume will be `chmod`'d with correct permissions.|
 |`--start-automount-daemon`|_true_|(boolean value) Whether CVMFS CSI nodeplugin Pod should run automount daemon. This is required for automounts to work. If however worker nodes are already running automount daemon (e.g. as a systemd service), you may disable running yet another instance of the daemon using this switch.|
-|`--role`|`all`|Enable driver service role (comma-separated list or repeated `--role` flags). Allowed values are: `all`, `identity`, `node`, `controller`.|
+|`--role`|_none, required_|Enable driver service role (comma-separated list or repeated `--role` flags). Allowed values are: `identity`, `node`, `controller`.|
 |`--version`|_false_|(boolean value) Print driver version and exit.|
