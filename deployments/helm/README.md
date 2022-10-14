@@ -1,18 +1,36 @@
 A Helm chart for the CVMFS-CSI driver, allowing the mounting of CVMFS repositories in Kubernetes environments. This chart will deploy the CSI driver as a DaemonSet, thus automatically scaling the driver on each cluster node.
 
-## Use
+## Usage
 
-To use, clone this repository and install the chart:
+### Install from CERN repositories
+
+You can install the Helm chart from CERN repositories:
+
+Add the repository:
+```
+helm repo add cern https://registry.cern.ch/chartrepo/cern
+helm repo update
+```
+
+Helm v3 installation:
+```
+helm install cvmfs cern/cvmfs-csi
+```
+
+### Install from source
+
+To use this Helm chart, clone this repository and install the chart:
 ```
 git clone https://github.com/cernops/cvmfs-csi
 ```
-Helm v2 Installation:
+
+Helm v2 installation:
 ```
 helm install --name cvmfs ./cvmfs-csi/deployments/helm/cvmfs-csi
 ```
-Helm v3 Installation:
+
+Helm v3 installation:
 ```
-kubectl create namespace cvmfs
 helm install cvmfs ./cvmfs-csi/deployments/helm/cvmfs-csi
 ```
 
