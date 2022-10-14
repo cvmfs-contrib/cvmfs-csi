@@ -21,7 +21,7 @@ You may need to customize `cvmfs-csi-default-local` and `cvmfs-csi-config-d` Con
 Helm chart can be installed from CERN registry:
 
 ```bash
-helm repo add cern https://registry.cern.ch/cern
+helm repo add cern https://registry.cern.ch/chartrepo/cern
 helm repo update
 helm install cvmfs cern/cvmfs-csi
 ```
