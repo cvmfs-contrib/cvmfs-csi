@@ -9,6 +9,7 @@ Table of contents:
   * [Adding CVMFS repository configuration](#adding-cvmfs-repository-configuration)
     + [Example: adding ilc.desy.de CVMFS repository](#example-adding-ilcdesyde-cvmfs-repository)
   * [Troubleshooting](#troubleshooting)
+    + [`Too many levels of symbolic links`](#too-many-levels-of-symbolic-links)
     + [`Transport endpoint is not connected` or repository directory empty](#transport-endpoint-is-not-connected-or-repository-directory-empty)
 
 With CVMFS CSI, users can expose CVMFS repositories as PersistentVolume objects and mount those in Pods. CVMFS CSI manages repository access using [autofs](https://www.kernel.org/doc/html/latest/filesystems/autofs.html).
@@ -295,8 +296,14 @@ drwxr-xr-x   11 999      997           4096 Oct  1  2020 sw
 
 ## Troubleshooting
 
+### `Too many levels of symbolic links`
+
+When accessing a CVMFS repository you may get `Too many levels of symbolic links` error (`ELOOP` error code). This is most likely caused by missing `mountPropagation: HostToContainer` in Pod's `volumeMounts` spec.
+
+Please follow [Example: Automounting CVMFS repositories](#example-automounting-cvmfs-repositories) guide on how to define `volumeMounts` for automounts.
+
 ### `Transport endpoint is not connected` or repository directory empty
 
-When accessing a CVMFS repository you may get `Transport endpoint is not connected` error, or an empty directory. This is most likely caused by the CVMFS CSI node plugin Pod being restarted (e.g. due to a crash, DaemonSet update, etc.), which then means losing FUSE processes that managed the CVMFS mounts, making it impossible to access them again.
+When accessing a CVMFS repository you may get `Transport endpoint is not connected` error (`ENOTCONN` error code), or an empty directory. This is most likely caused by the CVMFS CSI node plugin Pod having been restarted (e.g. due to a crash, DaemonSet update, etc.), which then means losing FUSE processes that managed the CVMFS mounts, making it impossible to access them again.
 
 To fix this, restart all Pods (`kubectl delete pod ...`) on the affected node that were using CVMFS volumes.
