@@ -17,12 +17,15 @@
 package driver
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"fmt"
 	"os"
 	goexec "os/exec"
 	"strings"
+	"syscall"
+	"time"
 
 	"github.com/cernops/cvmfs-csi/internal/cvmfs/controller"
 	"github.com/cernops/cvmfs-csi/internal/cvmfs/identity"
@@ -67,6 +70,16 @@ type (
 
 		// Role under which will the driver operate.
 		Roles map[ServiceRole]bool
+
+		// How many seconds to wait for automount daemon to start up,
+		// and /cvmfs mountpoint to become available.
+		AutomountDaemonStartupTimeoutSeconds int
+
+		// After how many seconds of inactivity of an autofs-managed mount
+		// should the volume be unmounted, i.e. automount --timeout <value>.
+		// 0: Never unmount.
+		// -1: Leave automount's default timeout.
+		AutomountDaemonUnmountAfterIdleSeconds int
 	}
 
 	// Driver holds CVMFS-CSI driver runtime state.
@@ -230,7 +243,7 @@ func setupCvmfs(o *Opts) error {
 
 	if o.StartAutomountDaemon {
 		// Start the automount daemon.
-		if _, err := exec.CombinedOutput(goexec.Command("automount")); err != nil {
+		if err := automountRunner(o); err != nil {
 			return fmt.Errorf("failed to start automount daemon: %v", err)
 		}
 	}
@@ -240,6 +253,100 @@ func setupCvmfs(o *Opts) error {
 	if _, err := exec.CombinedOutput(goexec.Command("mount", "--make-shared", "/cvmfs")); err != nil {
 		return fmt.Errorf("failed to share /cvmfs: %v", err)
 	}
+
+	return nil
+}
+
+func automountRunner(o *Opts) error {
+	args := []string{
+		"--foreground",
+	}
+
+	if log.LevelEnabled(log.LevelDebug) {
+		// Enable automount verbose logging.
+		args = append(args, "--verbose")
+	}
+
+	if log.LevelEnabled(log.LevelTrace) {
+		// automount passes -O options to the underlying fs mounts.
+		// Enable CVMFS debug logging.
+		args = append(args, "-O", "debug")
+	}
+
+	if o.AutomountDaemonUnmountAfterIdleSeconds != -1 {
+		args = append(args, fmt.Sprintf("--timeout=%d", o.AutomountDaemonUnmountAfterIdleSeconds))
+	}
+
+	cmd := goexec.Command("automount", args...)
+
+	// Set-up piping output for stdout and stderr to driver's logging.
+
+	outp, err := cmd.StdoutPipe()
+	if err != nil {
+		return err
+	}
+	cmd.Stderr = cmd.Stdout
+
+	// Run automount.
+
+	log.Infof("Starting automount daemon prog=%s args=%v", cmd.Path, cmd.Args)
+	if err := cmd.Start(); err != nil {
+		return err
+	}
+	log.Infof("Started automount daemon PID %d", cmd.Process.Pid)
+
+	scanner := bufio.NewScanner(outp)
+	scanner.Split(bufio.ScanLines)
+
+	go func() {
+		// Log and wait.
+
+		for scanner.Scan() {
+			log.Infof("automount[%d]: %s", cmd.Process.Pid, scanner.Text())
+		}
+
+		cmd.Wait()
+
+		if cmd.ProcessState.ExitCode() != 0 {
+			panic(fmt.Sprintf("automount[%d] has exited unexpectedly: %s", cmd.Process.Pid, cmd.ProcessState))
+		}
+
+		log.Infof("automount[%d] has exited: %s", cmd.Process.Pid, cmd.ProcessState)
+	}()
+
+	// Wait until autofs is mounted under /cvmfs.
+
+	retryFor := func(attempts int, f func() (bool, error)) error {
+		trial := 0
+		for trial < attempts {
+			res, err := f()
+
+			if err != nil {
+				return err
+			}
+
+			if res {
+				return nil
+			}
+
+			trial++
+			time.Sleep(1 * time.Second)
+		}
+
+		return fmt.Errorf("timed-out while waiting for autofs to be mounted")
+	}
+
+	const autofsStatfsType = 0x187
+
+	err = retryFor(o.AutomountDaemonStartupTimeoutSeconds, func() (bool, error) {
+		statfs := syscall.Statfs_t{}
+		err = syscall.Statfs("/cvmfs", &statfs)
+		if err != nil {
+			return false, err
+		}
+
+		return statfs.Type == autofsStatfsType, nil
+	})
 
 	return nil
 }

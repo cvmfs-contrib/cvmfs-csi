@@ -64,6 +64,9 @@ var (
 
 	hasAlienCache        = flag.Bool("has-alien-cache", false, "CVMFS client is using alien cache volume")
 	startAutomountDaemon = flag.Bool("start-automount-daemon", true, "start automount daemon when initializing CVMFS CSI driver")
+
+	automountDaemonStartupTimeoutSeconds   = flag.Int("automount-startup-timeout", 5, "number of seconds to wait for automount daemon to start up before exiting")
+	automountDaemonUnmountAfterIdleSeconds = flag.Int("automount-unmount-timeout", -1, "number of seconds of idle time after which an autofs-managed CVMFS mount will be unmounted. '0' means never unmount, '-1' leaves automount default option.")
 )
 
 func printVersion() {
@@ -106,6 +109,9 @@ func main() {
 
 		StartAutomountDaemon: *startAutomountDaemon,
 		HasAlienCache:        *hasAlienCache,
+
+		AutomountDaemonStartupTimeoutSeconds:   *automountDaemonStartupTimeoutSeconds,
+		AutomountDaemonUnmountAfterIdleSeconds: *automountDaemonUnmountAfterIdleSeconds,
 	})
 
 	if err != nil {

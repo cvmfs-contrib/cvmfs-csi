@@ -28,9 +28,9 @@ const (
 	ReqIDContextKey = "Req-ID"
 
 	// klog verbosity levels.
-	levelInfo  = 0
-	levelDebug = 4
-	levelTrace = 5
+	LevelInfo  = 0
+	LevelDebug = 4
+	LevelTrace = 5
 )
 
 func tryPrependReqID(ctx context.Context, logMsg string) string {
@@ -42,59 +42,63 @@ func tryPrependReqID(ctx context.Context, logMsg string) string {
 	return logMsg
 }
 
+func LevelEnabled(level int) bool {
+	return klog.V(klog.Level(level)).Enabled()
+}
+
 func Infof(format string, args ...interface{}) {
-	klog.V(levelInfo).InfofDepth(1, format, args...)
+	klog.V(LevelInfo).InfofDepth(1, format, args...)
 }
 
 func InfofWithContext(ctx context.Context, format string, args ...interface{}) {
-	klog.V(levelInfo).InfofDepth(1, tryPrependReqID(ctx, format), args...)
+	klog.V(LevelInfo).InfofDepth(1, tryPrependReqID(ctx, format), args...)
 }
 
 func InfofDepth(depth int, format string, args ...interface{}) {
-	klog.V(levelInfo).InfofDepth(depth, format, args...)
+	klog.V(LevelInfo).InfofDepth(depth, format, args...)
 }
 
 func InfofWithContextDepth(ctx context.Context, depth int, format string, args ...interface{}) {
-	klog.V(levelInfo).InfofDepth(depth, tryPrependReqID(ctx, format), args...)
+	klog.V(LevelInfo).InfofDepth(depth, tryPrependReqID(ctx, format), args...)
 }
 
 func Debugf(format string, args ...interface{}) {
-	klog.V(levelDebug).InfofDepth(1, format, args...)
+	klog.V(LevelDebug).InfofDepth(1, format, args...)
 }
 
 func DebugfWithContext(ctx context.Context, format string, args ...interface{}) {
-	if klog.V(levelDebug).Enabled() {
-		klog.V(levelDebug).InfofDepth(1, tryPrependReqID(ctx, format), args...)
+	if klog.V(LevelDebug).Enabled() {
+		klog.V(LevelDebug).InfofDepth(1, tryPrependReqID(ctx, format), args...)
 	}
 }
 
 func DebugfDepth(depth int, format string, args ...interface{}) {
-	klog.V(levelDebug).InfofDepth(depth, format, args...)
+	klog.V(LevelDebug).InfofDepth(depth, format, args...)
 }
 
 func DebugfWithContextDepth(ctx context.Context, depth int, format string, args ...interface{}) {
-	if klog.V(levelDebug).Enabled() {
-		klog.V(levelDebug).InfofDepth(depth, tryPrependReqID(ctx, format), args...)
+	if klog.V(LevelDebug).Enabled() {
+		klog.V(LevelDebug).InfofDepth(depth, tryPrependReqID(ctx, format), args...)
 	}
 }
 
 func Tracef(format string, args ...interface{}) {
-	klog.V(levelTrace).InfofDepth(1, format, args...)
+	klog.V(LevelTrace).InfofDepth(1, format, args...)
 }
 
 func TracefWithContext(ctx context.Context, format string, args ...interface{}) {
-	if klog.V(levelDebug).Enabled() {
-		klog.V(levelDebug).InfofDepth(1, tryPrependReqID(ctx, format), args...)
+	if klog.V(LevelDebug).Enabled() {
+		klog.V(LevelDebug).InfofDepth(1, tryPrependReqID(ctx, format), args...)
 	}
 }
 
 func TracefDepth(depth int, format string, args ...interface{}) {
-	klog.V(levelTrace).InfofDepth(depth, format, args...)
+	klog.V(LevelTrace).InfofDepth(depth, format, args...)
 }
 
 func TracefWithContextDepth(ctx context.Context, depth int, format string, args ...interface{}) {
-	if klog.V(levelDebug).Enabled() {
-		klog.V(levelDebug).InfofDepth(depth, tryPrependReqID(ctx, format), args...)
+	if klog.V(LevelDebug).Enabled() {
+		klog.V(LevelDebug).InfofDepth(depth, tryPrependReqID(ctx, format), args...)
 	}
 }
 
