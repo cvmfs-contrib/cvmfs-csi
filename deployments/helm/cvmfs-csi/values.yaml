@@ -1,74 +1,29 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
-# CVMFS configuration to be sourced into /etc/cvmfs.
-# It is exposed as a set of ConfigMaps deployed in the same namespace
-# as the CVMFS CSI driver.
-cvmfsConfig:
+# Extra ConfigMaps to create and manage by the chart release.
+# These can be used e.g. when defining CVMFS client configuration.
+# ConfigMap data supports go-template expressions.
+extraConfigMaps:
+# /etc/cvmfs/default.local
+- name: cvmfs-csi-default-local
+  data:
+    default.local: |
+      CVMFS_USE_GEOAPI=yes
+      CVMFS_HTTP_PROXY="http://ca-proxy.cern.ch:3128"
 
-  # ConfigMap for /etc/cvmfs/default.local file.
-  default.local:
+      # It is advised to change these configs in the cache section of the helm values
+      # and leave them unchanged here, so they auto-generate.
+      CVMFS_QUOTA_LIMIT={{ .Values.cache.local.cvmfsQuotaLimit }}
+      CVMFS_CACHE_BASE=/cvmfs-localcache
 
-    # Name of the ConfigMap (to use or create).
-    # If left empty, a name will be generated
-    # using the cvmfs-csi.fullname template.
-    configMapName: cvmfs-csi-default-local
-
-    # Whether to use this ConfigMap in /etc/cvmfs/default.local.
-    use: true
-
-    # Whether to create default.local ConfigMap with data entries defined below.
-    # If not, and `use` is set to true, it is expected the ConfigMap is already present.
-    create: true
-
-    data:
-
-      default.local: |
-        CVMFS_USE_GEOAPI=yes
-        CVMFS_HTTP_PROXY="http://ca-proxy.cern.ch:3128"
-
-        # It is advised to change these configs in the cache section of the helm values
-        # and leave them unchanged here, so they auto-generate.
-        CVMFS_QUOTA_LIMIT={{ .Values.cache.local.cvmfsQuotaLimit }}
-        CVMFS_CACHE_BASE=/cvmfs-localcache
-
-        {{- if .Values.cache.alien.enabled }}
-        CVMFS_ALIEN_CACHE=/cvmfs-aliencache
-        # When alien cache is used, CVMFS does not control the size of the cache.
-        CVMFS_QUOTA_LIMIT=-1
-        # Whether repositories should share a cache directory or each have their own.
-        CVMFS_SHARED_CACHE=no
-        {{- end -}}
-
-  # ConfigMap for /etc/cvmfs/config.d directory.
-  config.d:
-
-    # Name of the ConfigMap (to use or create).
-    # If left empty, a name will be generated
-    # using the cvmfs-csi.fullname template.
-    configMapName: cvmfs-csi-config-d
-
-    # Whether to use this ConfigMap in /etc/cvmfs/config.d.
-    use: true
-
-    # Whether to create ConfigMap with data entries defined below.
-    create: true
-
-    data: {}
-
-      # CERN
-
-      # cern.ch.conf: |
-      #   CVMFS_SERVER_URL="http://cvmfs-stratum-one.cern.ch/cvmfs/@fqrn@;http://cernvmfs.gridpp.rl.ac.uk/cvmfs/@fqrn@;http://cvmfs.racf.bnl.gov/cvmfs/@fqrn@;http://cvmfs.fnal.gov/cvmfs/@fqrn@"
-      #   CVMFS_PUBLIC_KEY='/etc/cvmfs/config.d/cern.ch.pub'
-
-      # cern.ch.pub: |
-      #   -----BEGIN PUBLIC KEY-----
-      #   MIGeMA0GCSqGSIb3DQEBAQUAA4GMADCBiAKBgHvy9PFYteIdwD5OxEosZoqpSUxP
-      #   LddA+zRwD0lWfavbFoCJOJS23zPpIimQ0gzH3FAebR3x9JzVVa3JFLxIUj4Fv3d6
-      #   /3fWhyK4Nmxc7B1Qh7wrRYlYtcDszGGk2DB0ETI83Jbzvfx1slvhMkqjWQ0c30w8
-      #   BWglnUvav0hRRwJRAgMBAAE=
-      #   -----END PUBLIC KEY-----
+      {{- if .Values.cache.alien.enabled }}
+      CVMFS_ALIEN_CACHE=/cvmfs-aliencache
+      # When alien cache is used, CVMFS does not control the size of the cache.
+      CVMFS_QUOTA_LIMIT=-1
+      # Whether repositories should share a cache directory or each have their own.
+      CVMFS_SHARED_CACHE=no
+      {{- end -}}
 
 # Cache configuration for storing CVMFS client data.
 # CVMFS CSI supports two kinds of caches:
@@ -99,6 +54,12 @@ nodeplugin:
   # and to generate DaemonSet name.
   name: nodeplugin
 
+  # Extra volumes to be appended to nodeplugin's Pod.spec.volumes.
+  extraVolumes:
+  - name: etc-cvmfs-default-conf
+    configMap:
+      name: cvmfs-csi-default-local
+
   # CVMFS CSI image and container resources specs.
   plugin:
     image:
@@ -106,6 +67,12 @@ nodeplugin:
       tag: v2.0.0
       pullPolicy: IfNotPresent
     resources: {}
+    # Extra volume mounts to append to nodeplugin's
+    # Pod.spec.containers[name="nodeplugin"].volumeMounts.
+    extraVolumeMounts:
+    - name: etc-cvmfs-default-conf
+      mountPath: /etc/cvmfs/default.local
+      subPath: default.local
 
   # csi-node-driver-registrar image and container resources specs.
   registrar:
@@ -170,6 +137,8 @@ controllerplugin:
   # Number of Deployment replicas. In general, one is sufficient.
   replicas: 1
 
+  extraVolumes: []
+
   # CVMFS CSI image and container resources specs.
   plugin:
     image:
@@ -177,6 +146,7 @@ controllerplugin:
       tag: v2.0.0
       pullPolicy: IfNotPresent
     resources: {}
+    extraVolumeMounts: []
 
   # CSI external-provisioner image and container resources specs.
   provisioner:

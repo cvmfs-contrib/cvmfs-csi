@@ -139,11 +139,3 @@ component: controllerplugin
 {{ include "cvmfs-csi.controllerplugin.matchLabels" . }}
 {{- end -}}
 {{- end -}}
-
-{{- define "cvmfs-csi.cm.default.local" -}}
-{{ (index .Values.cvmfsConfig "default.local" "configMapName") | default (printf "%s-default-local" (include "cvmfs-csi.fullname" .)) }}
-{{- end -}}
-
-{{- define "cvmfs-csi.cm.config.d" -}}
-{{ (index .Values.cvmfsConfig "config.d" "configMapName") | default (printf "%s-config-d" (include "cvmfs-csi.fullname" .)) }}
-{{- end -}}
