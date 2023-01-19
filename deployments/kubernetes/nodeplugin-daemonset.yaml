@@ -40,12 +40,22 @@ spec:
               mountPath: /registration
         - name: nodeplugin
           image: registry.cern.ch/magnum/cvmfs-csi:v2.0.0
-          args:
-            - -v=5
-            - --nodeid=$(NODE_ID)
-            - --endpoint=$(CSI_ENDPOINT)
-            - --drivername=$(CSI_DRIVERNAME)
-            - --role=identity,node
+          command:
+            - /bin/bash
+            - -c
+            - |
+              # Temporary workaround for CVMFS client hangs when rlimit_nofile is too high.
+              # See https://github.com/cvmfs-contrib/cvmfs-csi/issues/57 for details.
+              ulimit -n 1048576
+
+              /csi-cvmfsplugin                 \
+                -v=5                           \
+                --nodeid=$(NODE_ID)            \
+                --endpoint=$(CSI_ENDPOINT)     \
+                --drivername=$(CSI_DRIVERNAME) \
+                --start-automount-daemon=true  \
+                --role=identity,node           \
+                --has-alien-cache=false
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true
