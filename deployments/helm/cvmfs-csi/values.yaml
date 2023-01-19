@@ -245,6 +245,12 @@ cvmfsCSIPluginSocketFile: csi.sock
 # of the daemon using this switch.
 startAutomountDaemon: true
 
+# Number of seconds to wait for automount daemon to start up before exiting.
+automountDaemonStartupTimeout: 5
+# Number of seconds of idle time after which an autofs-managed CVMFS mount will
+# be unmounted. '0' means never unmount, '-1' leaves automount default option.
+automountDaemonUnmountTimeout: -1
+
 # Chart name overrides.
 nameOverride: ""
 fullNameOverride: ""

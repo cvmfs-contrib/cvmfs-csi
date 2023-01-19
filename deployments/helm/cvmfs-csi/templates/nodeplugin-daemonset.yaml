@@ -48,6 +48,8 @@ spec:
             - --endpoint=$(CSI_ENDPOINT)
             - --drivername=$(CSI_DRIVERNAME)
             - --start-automount-daemon={{ .Values.startAutomountDaemon }}
+            - --automount-startup-timeout={{ .Values.automountDaemonStartupTimeout }}
+            - --automount-unmount-timeout={{ .Values.automountDaemonStartupTimeout }}
             - --role=identity,node
             {{- if .Values.cache.alien.enabled }}
             - --has-alien-cache
