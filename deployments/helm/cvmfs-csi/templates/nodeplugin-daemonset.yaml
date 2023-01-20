@@ -88,14 +88,8 @@ spec:
             - name: cvmfs-aliencache
               mountPath: /cvmfs-aliencache
             {{- end }}
-            {{- if (index .Values.cvmfsConfig "default.local" "use") }}
-            - name: cvmfs-config-default-local
-              mountPath: /etc/cvmfs/default.local
-              subPath: default.local
-            {{- end }}
-            {{- if (index .Values.cvmfsConfig "config.d" "use") }}
-            - name: cvmfs-config-config-d
-              mountPath: /etc/cvmfs/config.d
+            {{- with .Values.nodeplugin.plugin.extraVolumeMounts }}
+            {{- toYaml . | nindent 12 }}
             {{- end }}
           {{- with .Values.nodeplugin.plugin.resources }}
           resources: {{ toYaml . | nindent 12 }}
@@ -128,15 +122,8 @@ spec:
         - name: cvmfs-aliencache
           {{- toYaml .Values.cache.alien.volumeSpec | nindent 10 }}
         {{- end }}
-        {{- if (index .Values.cvmfsConfig "default.local" "use") }}
-        - name: cvmfs-config-default-local
-          configMap:
-            name: {{ include "cvmfs-csi.cm.default.local" . }}
-        {{- end }}
-        {{- if (index .Values.cvmfsConfig "config.d" "use") }}
-        - name: cvmfs-config-config-d
-          configMap:
-            name: {{ include "cvmfs-csi.cm.config.d" . }}
+        {{- with .Values.nodeplugin.extraVolumes }}
+        {{- toYaml . | nindent 8 }}
         {{- end }}
       {{- with .Values.nodeplugin.affinity }}
       affinity: {{ toYaml . | nindent 8 }}
