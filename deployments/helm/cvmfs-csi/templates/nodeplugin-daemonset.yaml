@@ -42,18 +42,21 @@ spec:
           {{- end }}
         - name: nodeplugin
           image: {{ .Values.nodeplugin.plugin.image.repository }}:{{ .Values.nodeplugin.plugin.image.tag }}
-          args:
-            - -v={{ .Values.logVerbosityLevel }}
-            - --nodeid=$(NODE_ID)
-            - --endpoint=$(CSI_ENDPOINT)
-            - --drivername=$(CSI_DRIVERNAME)
-            - --start-automount-daemon={{ .Values.startAutomountDaemon }}
-            - --automount-startup-timeout={{ .Values.automountDaemonStartupTimeout }}
-            - --automount-unmount-timeout={{ .Values.automountDaemonUnmountTimeout }}
-            - --role=identity,node
-            {{- if .Values.cache.alien.enabled }}
-            - --has-alien-cache
-            {{- end }}
+          command:
+            - /bin/bash
+            - -c
+            - |
+              ulimit -n {{ .Values._rlimit_nofile }}
+              /csi-cvmfsplugin                                                          \
+                -v={{ .Values.logVerbosityLevel }}                                      \
+                --nodeid=$(NODE_ID)                                                     \
+                --endpoint=$(CSI_ENDPOINT)                                              \
+                --drivername=$(CSI_DRIVERNAME)                                          \
+                --start-automount-daemon={{ .Values.startAutomountDaemon }}             \
+                --automount-startup-timeout={{ .Values.automountDaemonStartupTimeout }} \
+                --automount-unmount-timeout={{ .Values.automountDaemonUnmountTimeout }} \
+                --role=identity,node                                                    \
+                --has-alien-cache={{ .Values.cache.alien.enabled }}
           imagePullPolicy: {{ .Values.nodeplugin.plugin.image.pullPolicy }}
           securityContext:
             privileged: true
