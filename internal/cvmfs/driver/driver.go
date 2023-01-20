@@ -258,9 +258,16 @@ func setupCvmfs(o *Opts) error {
 }
 
 func automountRunner(o *Opts) error {
-	args := []string{
-		"--foreground",
-	}
+	var (
+		confBuffer bytes.Buffer
+		args       = []string{
+			"--foreground",
+		}
+	)
+
+	// Build automount config file and cmd args.
+
+	confBuffer.WriteString("USE_MISC_DEVICE=\"yes\"\n")
 
 	if log.LevelEnabled(log.LevelDebug) {
 		// Enable automount verbose logging.
@@ -274,7 +281,13 @@ func automountRunner(o *Opts) error {
 	}
 
 	if o.AutomountDaemonUnmountAfterIdleSeconds != -1 {
-		args = append(args, fmt.Sprintf("--timeout=%d", o.AutomountDaemonUnmountAfterIdleSeconds))
+		// automount in the image ignores --timeout flag,
+		// and only reads configuration from /etc/sysconfig/autofs.
+		confBuffer.WriteString(fmt.Sprintf("TIMEOUT=%d\n", o.AutomountDaemonUnmountAfterIdleSeconds))
+	}
+
+	if err := os.WriteFile("/etc/sysconfig/autofs", confBuffer.Bytes(), 0644); err != nil {
+		return fmt.Errorf("failed to write autofs configuration to /etc/sysconfig/autofs: %v", err)
 	}
 
 	cmd := goexec.Command("automount", args...)
