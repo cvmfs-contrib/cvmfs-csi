@@ -39,7 +39,7 @@ spec:
             - name: registration-dir
               mountPath: /registration
         - name: nodeplugin
-          image: registry.cern.ch/magnum/cvmfs-csi:v2.1.0
+          image: registry.cern.ch/magnum/cvmfs-csi:v2.1.1
           command:
             - /bin/bash
             - -c
