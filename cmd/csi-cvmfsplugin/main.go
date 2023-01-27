@@ -62,19 +62,12 @@ var (
 	version    = flag.Bool("version", false, "Print driver version and exit.")
 	roles      rolesFlag
 
-	hasAlienCache        = flag.Bool("has-alien-cache", false, "CVMFS client is using alien cache volume")
-	startAutomountDaemon = flag.Bool("start-automount-daemon", true, "start automount daemon when initializing CVMFS CSI driver")
+	hasAlienCache        = flag.Bool("has-alien-cache", false, "(DEPRECATED: use automount-runner --has-alien-cache) CVMFS client is using alien cache volume")
+	startAutomountDaemon = flag.Bool("start-automount-daemon", true, "(DEPRECATED: use automount-runner) start automount daemon when initializing CVMFS CSI driver")
 
-	automountDaemonStartupTimeoutSeconds   = flag.Int("automount-startup-timeout", 5, "number of seconds to wait for automount daemon to start up before exiting")
-	automountDaemonUnmountAfterIdleSeconds = flag.Int("automount-unmount-timeout", -1, "number of seconds of idle time after which an autofs-managed CVMFS mount will be unmounted. '0' means never unmount, '-1' leaves automount default option.")
+	automountDaemonStartupTimeoutSeconds   = flag.Int("automount-startup-timeout", 10, "number of seconds to wait for automount daemon to start up before giving up and exiting. '0' means wait forever")
+	automountDaemonUnmountAfterIdleSeconds = flag.Int("automount-unmount-timeout", 300, "(DEPRECATED: use automount-runner --unmount-timeout) number of seconds of idle time after which an autofs-managed CVMFS mount will be unmounted. '0' means never unmount, '-1' leaves automount default option.")
 )
-
-func printVersion() {
-	fmt.Printf(
-		"CVMFS CSI plugin version %s (commit: %s; build time: %s; metadata: %s)\n",
-		cvmfsversion.Version(), cvmfsversion.Commit(), cvmfsversion.BuildTime(), cvmfsversion.Metadata(),
-	)
-}
 
 func main() {
 	// Handle flags and initialize logging.
@@ -88,13 +81,14 @@ func main() {
 	flag.Parse()
 
 	if *version {
-		printVersion()
+		fmt.Println("CVMFS CSI plugin version", cvmfsversion.FullVersion())
 		os.Exit(0)
 	}
 
-	log.Infof("Running CVMFS CSI plugin with %v", os.Args)
-
 	// Initialize and run the driver.
+
+	log.Infof("CVMFS CSI plugin version %s", cvmfsversion.FullVersion())
+	log.Infof("Command line arguments %v", os.Args)
 
 	driverRoles := make(map[driver.ServiceRole]bool, len(roles))
 	for _, role := range roles {
@@ -107,11 +101,7 @@ func main() {
 		NodeID:      *nodeId,
 		Roles:       driverRoles,
 
-		StartAutomountDaemon: *startAutomountDaemon,
-		HasAlienCache:        *hasAlienCache,
-
-		AutomountDaemonStartupTimeoutSeconds:   *automountDaemonStartupTimeoutSeconds,
-		AutomountDaemonUnmountAfterIdleSeconds: *automountDaemonUnmountAfterIdleSeconds,
+		AutomountDaemonStartupTimeoutSeconds: *automountDaemonStartupTimeoutSeconds,
 	})
 
 	if err != nil {

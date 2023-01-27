@@ -17,7 +17,10 @@
 // Package version holds version metadata for the csi-cvmfsplugin.
 package version
 
-import "time"
+import (
+	"fmt"
+	"time"
+)
 
 // Values to be injected during build (ldflags).
 var (
@@ -46,4 +49,10 @@ func Metadata() string {
 // BuildTime returns the date the package was built.
 func BuildTime() time.Time {
 	return buildTime
+}
+
+// FullVersion constructs a string with full version information.
+func FullVersion() string {
+	return fmt.Sprintf("%s (commit: %s; build time: %s; metadata: %s)",
+		Version(), Commit(), Metadata(), BuildTime())
 }

@@ -36,11 +36,11 @@ After successful deployment, you should see similar output from `kubectl get all
 $ kubectl get all -l app=cvmfs-csi
 NAME                                                READY   STATUS    RESTARTS   AGE
 pod/c-cvmfs-csi-controllerplugin-5b44968dc9-jb2ms   2/2     Running   0          90m
-pod/c-cvmfs-csi-nodeplugin-t6lvc                    2/2     Running   0          90m
-pod/cvmfs-csi-nodeplugin-rgxkh                      2/2     Running   0          90m
+pod/c-cvmfs-csi-nodeplugin-t6lvc                    3/3     Running   0          90m
+pod/cvmfs-csi-nodeplugin-rgxkh                      3/3     Running   0          90m
 
 NAME                                    DESIRED   CURRENT   READY   UP-TO-DATE   AVAILABLE   NODE SELECTOR   AGE
-daemonset.apps/c-cvmfs-csi-nodeplugin   2         2         2       2            2           <none>          40h
+daemonset.apps/c-cvmfs-csi-nodeplugin   2         2         2       2            2           <none>          90m
 
 NAME                                           READY   UP-TO-DATE   AVAILABLE   AGE
 deployment.apps/c-cvmfs-csi-controllerplugin   1/1     1            1           90m
@@ -58,9 +58,14 @@ CVMFS CSI driver executable accepts following set of command line arguments:
 |`--endpoint`|`unix:///var/lib/kubelet/plugins/cvmfs.csi.cern.ch/csi.sock`|(string value) CSI endpoint. CVMFS CSI will create a UNIX socket at this location.|
 |`--drivername`|`cvmfs.csi.cern.ch`|(string value) Name of the driver that is used to link PersistentVolume objects to CVMFS CSI driver.|
 |`--nodeid`|_none, required_|(string value) Unique identifier of the node on which the CVMFS CSI node plugin pod is running. Should be set to the value of `Pod.spec.nodeName`.|
-|`--has-alien-cache`|_false_|(boolean value) CVMFS client is using alien cache volume. The volume will be `chmod`'d with correct permissions.|
-|`--start-automount-daemon`|_true_|(boolean value) Whether CVMFS CSI nodeplugin Pod should run automount daemon. This is required for automounts to work. If however worker nodes are already running automount daemon (e.g. as a systemd service), you may disable running yet another instance of the daemon using this switch.|
-|`automount-startup-timeout`|_5_|number of seconds to wait for automount daemon to start up before exiting|
-|`automount-unmount-timeout`|_-1_|number of seconds of idle time after which an autofs-managed CVMFS mount will be unmounted. '0' means never unmount, '-1' leaves automount default option.|
+|`--automount-startup-timeout`|_10_|number of seconds to wait for automount daemon to start up before exiting. `0` means no timeout.|
 |`--role`|_none, required_|Enable driver service role (comma-separated list or repeated `--role` flags). Allowed values are: `identity`, `node`, `controller`.|
+|`--version`|_false_|(boolean value) Print driver version and exit.|
+
+## automount-runner command line arguments
+
+|Name|Default value|Description|
+|--|--|--|
+|`--has-alien-cache`|`false`|(boolean value) CVMFS client is using alien cache volume.|
+|`--unmount-timeout`|_-1_|number of seconds of idle time after which an autofs-managed CVMFS mount will be unmounted. `0` means never unmount.|
 |`--version`|_false_|(boolean value) Print driver version and exit.|

@@ -36,6 +36,7 @@ spec:
         - name: controllerplugin
           image: {{ .Values.controllerplugin.plugin.image.repository }}:{{ .Values.controllerplugin.plugin.image.tag }}
           imagePullPolicy: {{ .Values.controllerplugin.plugin.image.pullPolicy }}
+          command: [/csi-cvmfsplugin]
           args:
             - -v={{ .Values.logVerbosityLevel }}
             - --nodeid=$(NODE_ID)

@@ -42,21 +42,14 @@ spec:
           {{- end }}
         - name: nodeplugin
           image: {{ .Values.nodeplugin.plugin.image.repository }}:{{ .Values.nodeplugin.plugin.image.tag }}
-          command:
-            - /bin/bash
-            - -c
-            - |
-              ulimit -n {{ .Values._rlimit_nofile }}
-              /csi-cvmfsplugin                                                          \
-                -v={{ .Values.logVerbosityLevel }}                                      \
-                --nodeid=$(NODE_ID)                                                     \
-                --endpoint=$(CSI_ENDPOINT)                                              \
-                --drivername=$(CSI_DRIVERNAME)                                          \
-                --start-automount-daemon={{ .Values.startAutomountDaemon }}             \
-                --automount-startup-timeout={{ .Values.automountDaemonStartupTimeout }} \
-                --automount-unmount-timeout={{ .Values.automountDaemonUnmountTimeout }} \
-                --role=identity,node                                                    \
-                --has-alien-cache={{ .Values.cache.alien.enabled }}
+          command: [/csi-cvmfsplugin]
+          args:
+            - -v={{ .Values.logVerbosityLevel }}
+            - --nodeid=$(NODE_ID)
+            - --endpoint=$(CSI_ENDPOINT)
+            - --drivername=$(CSI_DRIVERNAME)
+            - --role=identity,node
+            - --automount-startup-timeout={{ .Values.automountDaemonStartupTimeout }}
           imagePullPolicy: {{ .Values.nodeplugin.plugin.image.pullPolicy }}
           securityContext:
             privileged: true
@@ -85,13 +78,47 @@ spec:
               readOnly: true
             - name: host-dev
               mountPath: /dev
+            - name: autofs-cvmfs
+              mountPath: /cvmfs
+              mountPropagation: Bidirectional
+          {{- with .Values.nodeplugin.plugin.resources }}
+          resources: {{ toYaml . | nindent 12 }}
+          {{- end }}
+        - name: automount
+          image: {{ .Values.nodeplugin.automount.image.repository }}:{{ .Values.nodeplugin.automount.image.tag }}
+          command:
+            - /bin/bash
+            - -c
+            - |
+              ulimit -n {{ .Values._rlimit_nofile }}
+              /automount-runner                                               \
+                -v={{ .Values.logVerbosityLevel }}                            \
+                --unmount-timeout={{ .Values.automountDaemonUnmountTimeout }} \
+                --has-alien-cache={{ .Values.cache.alien.enabled }}
+          imagePullPolicy: {{ .Values.nodeplugin.plugin.image.pullPolicy }}
+          securityContext:
+            privileged: true
+            capabilities:
+              add: ["SYS_ADMIN"]
+            allowPrivilegeEscalation: true
+          volumeMounts:
+            - mountPath: /sys
+              name: host-sys
+            - name: lib-modules
+              mountPath: /lib/modules
+              readOnly: true
+            - name: host-dev
+              mountPath: /dev
+            - name: autofs-cvmfs
+              mountPath: /cvmfs
+              mountPropagation: Bidirectional
             - name: cvmfs-localcache
               mountPath: /cvmfs-localcache
             {{- if .Values.cache.alien.enabled }}
             - name: cvmfs-aliencache
               mountPath: /cvmfs-aliencache
             {{- end }}
-            {{- with .Values.nodeplugin.plugin.extraVolumeMounts }}
+            {{- with .Values.nodeplugin.automount.extraVolumeMounts }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
           {{- with .Values.nodeplugin.plugin.resources }}
@@ -119,6 +146,8 @@ spec:
         - name: host-dev
           hostPath:
             path: /dev
+        - name: autofs-cvmfs
+          emptyDir: {}
         - name: cvmfs-localcache
           {{- toYaml .Values.cache.local.volumeSpec | nindent 10 }}
         {{- if .Values.cache.alien.enabled }}
