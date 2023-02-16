@@ -7,23 +7,22 @@
 extraConfigMaps:
   # /etc/cvmfs/default.local
   cvmfs-csi-default-local:
-    data:
-      default.local: |
-        CVMFS_USE_GEOAPI=yes
-        CVMFS_HTTP_PROXY="http://ca-proxy.cern.ch:3128"
+    default.local: |
+      CVMFS_USE_GEOAPI=yes
+      CVMFS_HTTP_PROXY="http://ca-proxy.cern.ch:3128"
 
-        # It is advised to change these configs in the cache section of the helm values
-        # and leave them unchanged here, so they auto-generate.
-        CVMFS_QUOTA_LIMIT={{ .Values.cache.local.cvmfsQuotaLimit }}
-        CVMFS_CACHE_BASE=/cvmfs-localcache
+      # It is advised to change these configs in the cache section of the helm values
+      # and leave them unchanged here, so they auto-generate.
+      CVMFS_QUOTA_LIMIT={{ .Values.cache.local.cvmfsQuotaLimit }}
+      CVMFS_CACHE_BASE=/cvmfs-localcache
 
-        {{- if .Values.cache.alien.enabled }}
-        CVMFS_ALIEN_CACHE=/cvmfs-aliencache
-        # When alien cache is used, CVMFS does not control the size of the cache.
-        CVMFS_QUOTA_LIMIT=-1
-        # Whether repositories should share a cache directory or each have their own.
-        CVMFS_SHARED_CACHE=no
-        {{- end -}}
+      {{- if .Values.cache.alien.enabled }}
+      CVMFS_ALIEN_CACHE=/cvmfs-aliencache
+      # When alien cache is used, CVMFS does not control the size of the cache.
+      CVMFS_QUOTA_LIMIT=-1
+      # Whether repositories should share a cache directory or each have their own.
+      CVMFS_SHARED_CACHE=no
+      {{- end -}}
 
 # Cache configuration for storing CVMFS client data.
 # CVMFS CSI supports two kinds of caches:

@@ -10,8 +10,5 @@ metadata:
   labels:
     {{- include "cvmfs-csi.common.metaLabels" $ | nindent 4 }}
 data:
-  {{- range $path, $data := .data }}
-  {{- $path | nindent 2 }}: |
-    {{- tpl $data $ | nindent 4 }}
-  {{- end }}
+  {{- tpl (toYaml $value) $ | nindent 2 }}
 {{- end }}
