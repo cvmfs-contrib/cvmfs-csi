@@ -35,7 +35,7 @@ type Server struct {
 }
 
 const (
-	cvmfsBase = "/cvmfs"
+	cvmfsRoot = "/cvmfs"
 )
 
 var (
@@ -123,11 +123,11 @@ func doMount(req *csi.NodePublishVolumeRequest) error {
 
 	if repository := req.GetVolumeContext()["repository"]; repository != "" {
 		// Mount a single repository.
-		return bindMount(path.Join(cvmfsBase, repository), targetPath)
+		return bindMount(path.Join(cvmfsRoot, repository), targetPath)
 	}
 
 	// Mount the whole autofs-CVMFS root.
-	return slaveRecursiveBind(cvmfsBase, targetPath)
+	return slaveRecursiveBind(cvmfsRoot, targetPath)
 }
 
 func (srv *Server) NodeUnpublishVolume(

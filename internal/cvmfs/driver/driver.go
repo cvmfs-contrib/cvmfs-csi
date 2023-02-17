@@ -17,19 +17,17 @@
 package driver
 
 import (
-	"bytes"
 	"context"
+	"errors"
 	"fmt"
-	"os"
-	goexec "os/exec"
 	"strings"
+	"time"
 
+	"github.com/cernops/cvmfs-csi/internal/cvmfs/automount"
 	"github.com/cernops/cvmfs-csi/internal/cvmfs/controller"
 	"github.com/cernops/cvmfs-csi/internal/cvmfs/identity"
 	"github.com/cernops/cvmfs-csi/internal/cvmfs/node"
-	"github.com/cernops/cvmfs-csi/internal/exec"
 	"github.com/cernops/cvmfs-csi/internal/log"
-	"github.com/cernops/cvmfs-csi/internal/version"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"k8s.io/apimachinery/pkg/util/validation"
@@ -53,30 +51,12 @@ type (
 		// CVMFS CSI node plugin pod is running.
 		NodeID string
 
-		// HasAlienCache determines whether we're using alien cache.
-		// If so, we need to prepare the alien cache volume first (e.g.
-		// make sure it has correct permissions).
-		HasAlienCache bool
-
-		// StartAutomountDaemon determines whether CVMFS CSI nodeplugin Pod
-		// should run automount daemon. This is required for automounts to work.
-		// If however worker nodes are already running automount daemon (e.g.
-		// as a systemd service), we can use that one (since we should be running
-		// in host's PID namespace anyway).
-		StartAutomountDaemon bool
-
 		// Role under which will the driver operate.
 		Roles map[ServiceRole]bool
 
-		// How many seconds to wait for automount daemon to start up,
-		// and /cvmfs mountpoint to become available.
+		// How many seconds to wait for automount daemon to start up.
+		// Zero means no timeout.
 		AutomountDaemonStartupTimeoutSeconds int
-
-		// After how many seconds of inactivity of an autofs-managed mount
-		// should the volume be unmounted, i.e. automount --timeout <value>.
-		// 0: Never unmount.
-		// -1: Leave automount's default timeout.
-		AutomountDaemonUnmountAfterIdleSeconds int
 	}
 
 	// Driver holds CVMFS-CSI driver runtime state.
@@ -97,6 +77,10 @@ const (
 
 	// Maximum driver name length as per CSI spec.
 	maxDriverNameLength = 63
+)
+
+var (
+	errTimeout = errors.New("timed out waiting for condition")
 )
 
 func (o *Opts) validate() error {
@@ -144,17 +128,97 @@ func New(opts *Opts) (*Driver, error) {
 	}, nil
 }
 
+func setupIdentityServiceRole(s *grpcServer, d *Driver) error {
+	log.Debugf("Registering Identity server")
+	csi.RegisterIdentityServer(
+		s.server,
+		identity.New(
+			d.DriverName,
+			d.Opts.Roles[ControllerServiceRole],
+		),
+	)
+
+	return nil
+}
+
+func tryWithTimeout(description string, timeoutSecs int, f func() (bool, error)) error {
+	var (
+		done bool
+		err  error
+	)
+
+	for i := 0; i < timeoutSecs || timeoutSecs == 0; i++ {
+		done, err = f()
+		if err != nil {
+			return err
+		}
+
+		if done {
+			log.Debugf("%s ready", description)
+			break
+		}
+
+		log.Debugf("Waiting for %s...", description)
+		time.Sleep(time.Second)
+	}
+
+	if !done {
+		return fmt.Errorf("timed-out waiting for %s", description)
+	}
+
+	return nil
+}
+
+func setupNodeServiceRole(s *grpcServer, d *Driver) error {
+	// First wait until autofs in /cvmfs is ready.
+
+	err := tryWithTimeout(
+		"autofs in /cvmfs",
+		d.Opts.AutomountDaemonStartupTimeoutSeconds,
+		func() (bool, error) { return automount.IsAutofs("/cvmfs") },
+	)
+	if err != nil {
+		return err
+	}
+
+	// We can register node server now.
+
+	ns := node.New(d.NodeID)
+
+	caps, err := ns.NodeGetCapabilities(
+		context.TODO(),
+		&csi.NodeGetCapabilitiesRequest{},
+	)
+	if err != nil {
+		return fmt.Errorf("failed to get Node server capabilities: %v", err)
+	}
+
+	log.Debugf("Registering Node server with capabilities %+v", caps.GetCapabilities())
+	csi.RegisterNodeServer(s.server, node.New(d.NodeID))
+
+	return nil
+}
+
+func setupControllerServiceRole(s *grpcServer, d *Driver) error {
+	cs := controller.New()
+
+	caps, err := cs.ControllerGetCapabilities(
+		context.TODO(),
+		&csi.ControllerGetCapabilitiesRequest{},
+	)
+	if err != nil {
+		return fmt.Errorf("failed to get Controller server capabilities: %v", err)
+	}
+
+	log.Debugf("Registering Controller server with capabilities %+v", caps.GetCapabilities())
+	csi.RegisterControllerServer(s.server, controller.New())
+
+	return nil
+}
+
 // Run starts CSI services and blocks.
 func (d *Driver) Run() error {
 	log.Infof("Driver: %s", d.DriverName)
-
-	log.Infof(
-		"Version: %s (commit: %s; build time: %s; metadata: %s)",
-		version.Version(),
-		version.Commit(),
-		version.BuildTime(),
-		version.Metadata(),
-	)
 
 	s, err := newGRPCServer(d.CSIEndpoint)
 	if err != nil {
@@ -162,136 +226,22 @@ func (d *Driver) Run() error {
 	}
 
 	if d.Opts.Roles[IdentityServiceRole] {
-		log.Debugf("Registering Identity server")
-		csi.RegisterIdentityServer(
-			s.server,
-			identity.New(
-				d.DriverName,
-				d.Opts.Roles[ControllerServiceRole],
-			),
-		)
+		if err = setupIdentityServiceRole(s, d); err != nil {
+			return fmt.Errorf("failed to setup identity service role: %v", err)
+		}
 	}
 
 	if d.Opts.Roles[NodeServiceRole] {
-		ver, err := cvmfsVersion()
-		if err != nil {
-			return err
+		if err = setupNodeServiceRole(s, d); err != nil {
+			return fmt.Errorf("failed to setup node service role: %v", err)
 		}
-		log.Infof("%s", ver)
-
-		err = setupCvmfs(d.Opts)
-		if err != nil {
-			return err
-		}
-
-		ns := node.New(d.NodeID)
-
-		caps, err := ns.NodeGetCapabilities(
-			context.TODO(),
-			&csi.NodeGetCapabilitiesRequest{},
-		)
-		if err != nil {
-			return fmt.Errorf("failed to get Node server capabilities: %v", err)
-		}
-
-		log.Debugf("Registering Node server with capabilities %+v", caps.GetCapabilities())
-		csi.RegisterNodeServer(s.server, node.New(d.NodeID))
 	}
 
 	if d.Opts.Roles[ControllerServiceRole] {
-		cs := controller.New()
-
-		caps, err := cs.ControllerGetCapabilities(
-			context.TODO(),
-			&csi.ControllerGetCapabilitiesRequest{},
-		)
-		if err != nil {
-			return fmt.Errorf("failed to get Controller server capabilities: %v", err)
+		if err = setupControllerServiceRole(s, d); err != nil {
+			return fmt.Errorf("failed to setup controller service role: %v", err)
 		}
-
-		log.Debugf("Registering Controller server with capabilities %+v", caps.GetCapabilities())
-		csi.RegisterControllerServer(s.server, controller.New())
 	}
 
 	return s.serve()
-}
-
-func cvmfsVersion() (string, error) {
-	out, err := exec.CombinedOutput(goexec.Command("cvmfs2", "--version"))
-	if err != nil {
-		return "", fmt.Errorf("failed to get CVMFS version: %v", err)
-	}
-
-	return string(bytes.TrimSpace(out)), nil
-}
-
-func setupCvmfs(o *Opts) error {
-	if o.HasAlienCache {
-		// Make sure the volume is writable by CVMFS processes.
-		if err := os.Chmod("/cvmfs-aliencache", 0777); err != nil {
-			return fmt.Errorf("failed to chmod /cvmfs-aliencache: %v", err)
-		}
-	}
-
-	// Set up configuration required for autofs with CVMFS to work properly.
-	if _, err := exec.CombinedOutput(goexec.Command("cvmfs_config", "setup")); err != nil {
-		return fmt.Errorf("failed to setup CVMFS config: %v", err)
-	}
-
-	if o.StartAutomountDaemon {
-		// Start the automount daemon.
-		if err := automountRunner(o); err != nil {
-			return fmt.Errorf("failed to start automount daemon: %v", err)
-		}
-	}
-
-	// The autofs root must be made to be shared, so that mount/unmount events
-	// can be propagated to bindmounts we'll be making for consumer Pods.
-	if _, err := exec.CombinedOutput(goexec.Command("mount", "--make-shared", "/cvmfs")); err != nil {
-		return fmt.Errorf("failed to share /cvmfs: %v", err)
-	}
-
-	return nil
-}
-
-func automountRunner(o *Opts) error {
-	var (
-		confBuffer bytes.Buffer
-		args       = []string{
-			// FIXME: running automount in foreground breaks triggering mounts.
-			//        Disabled for now. This disables log capture too.
-			// "--foreground",
-		}
-	)
-
-	// Build automount config file and cmd args.
-
-	confBuffer.WriteString("USE_MISC_DEVICE=\"yes\"\n")
-
-	if log.LevelEnabled(log.LevelDebug) {
-		// Enable automount verbose logging.
-		args = append(args, "--verbose")
-	}
-
-	if log.LevelEnabled(log.LevelTrace) {
-		// automount passes -O options to the underlying fs mounts.
-		// Enable CVMFS debug logging.
-		args = append(args, "-O", "debug")
-	}
-
-	if o.AutomountDaemonUnmountAfterIdleSeconds != -1 {
-		// automount in the image ignores --timeout flag,
-		// and only reads configuration from /etc/sysconfig/autofs.
-		confBuffer.WriteString(fmt.Sprintf("TIMEOUT=%d\n", o.AutomountDaemonUnmountAfterIdleSeconds))
-	}
-
-	if err := os.WriteFile("/etc/sysconfig/autofs", confBuffer.Bytes(), 0644); err != nil {
-		return fmt.Errorf("failed to write autofs configuration to /etc/sysconfig/autofs: %v", err)
-	}
-
-	if _, err := exec.CombinedOutput(goexec.Command("automount", args...)); err != nil {
-		return fmt.Errorf("failed to start automount daemon: %v", err)
-	}
-
-	return nil
 }

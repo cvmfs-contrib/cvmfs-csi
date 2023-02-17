@@ -63,7 +63,15 @@ nodeplugin:
   plugin:
     image:
       repository: registry.cern.ch/magnum/cvmfs-csi
-      tag: v2.1.1
+      tag: latest
+      pullPolicy: IfNotPresent
+    resources: {}
+
+  # CVMFS CSI image and container resources specs.
+  automount:
+    image:
+      repository: registry.cern.ch/magnum/cvmfs-csi
+      tag: latest
       pullPolicy: IfNotPresent
     resources: {}
     # Extra volume mounts to append to nodeplugin's
@@ -142,7 +150,7 @@ controllerplugin:
   plugin:
     image:
       repository: registry.cern.ch/magnum/cvmfs-csi
-      tag: v2.1.1
+      tag: latest
       pullPolicy: IfNotPresent
     resources: {}
     extraVolumeMounts: []
@@ -208,17 +216,11 @@ kubeletDirectory: /var/lib/kubelet
 # <kubeletPluginDirectory>/plugins/<csiDriverName>/<cvmfsCSIPluginSocketFile>.
 cvmfsCSIPluginSocketFile: csi.sock
 
-# Whether CVMFS CSI nodeplugin Pod should run automount daemon. This is required
-# for automounts to work. If however worker nodes are already running automount
-# daemon (e.g. as a systemd service), you may disable running yet another instance
-# of the daemon using this switch.
-startAutomountDaemon: true
-
 # Number of seconds to wait for automount daemon to start up before exiting.
-automountDaemonStartupTimeout: 5
+automountDaemonStartupTimeout: 10
 # Number of seconds of idle time after which an autofs-managed CVMFS mount will
 # be unmounted. '0' means never unmount, '-1' leaves automount default option.
-automountDaemonUnmountTimeout: -1
+automountDaemonUnmountTimeout: 300
 
 # Chart name overrides.
 nameOverride: ""
@@ -232,4 +234,4 @@ extraMetaLabels: {}
 # See https://github.com/cvmfs-contrib/cvmfs-csi/issues/57 for details.
 # NOTE: this value will be deprecated once the issue is fixed.
 # Empty value "" disables the workaround.
-_rlimit_nofile: ""
+_rlimit_nofile: "1000000"

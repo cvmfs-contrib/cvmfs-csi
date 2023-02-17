@@ -35,8 +35,9 @@ spec:
             - name: socket-dir
               mountPath: /csi
         - name: controllerplugin
-          image: registry.cern.ch/magnum/cvmfs-csi:v2.1.1
+          image: registry.cern.ch/magnum/cvmfs-csi:latest
           imagePullPolicy: IfNotPresent
+          command: [/csi-cvmfsplugin]
           args:
             - -v=5
             - --nodeid=$(NODE_ID)

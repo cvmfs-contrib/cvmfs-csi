@@ -10,8 +10,8 @@ spec:
     type: OnDelete
   selector:
     matchLabels:
-      app: cvmfs-csi
       component: nodeplugin
+      app: cvmfs-csi
   template:
     metadata:
       labels:
@@ -39,23 +39,15 @@ spec:
             - name: registration-dir
               mountPath: /registration
         - name: nodeplugin
-          image: registry.cern.ch/magnum/cvmfs-csi:v2.1.1
-          command:
-            - /bin/bash
-            - -c
-            - |
-              # Temporary workaround for CVMFS client hangs when rlimit_nofile is too high.
-              # See https://github.com/cvmfs-contrib/cvmfs-csi/issues/57 for details.
-              ulimit -n 1048576
-
-              /csi-cvmfsplugin                 \
-                -v=5                           \
-                --nodeid=$(NODE_ID)            \
-                --endpoint=$(CSI_ENDPOINT)     \
-                --drivername=$(CSI_DRIVERNAME) \
-                --start-automount-daemon=true  \
-                --role=identity,node           \
-                --has-alien-cache=false
+          image: registry.cern.ch/magnum/cvmfs-csi:latest
+          command: [/csi-cvmfsplugin]
+          args:
+            - -v=5
+            - --nodeid=$(NODE_ID)
+            - --endpoint=$(CSI_ENDPOINT)
+            - --drivername=$(CSI_DRIVERNAME)
+            - --role=identity,node
+            - --automount-startup-timeout=10
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true
@@ -84,13 +76,42 @@ spec:
               readOnly: true
             - name: host-dev
               mountPath: /dev
+            - name: autofs-cvmfs
+              mountPath: /cvmfs
+              mountPropagation: Bidirectional
+        - name: automount
+          image: registry.cern.ch/magnum/cvmfs-csi:latest
+          command:
+            - /bin/bash
+            - -c
+            - |
+              ulimit -n 1000000
+              /automount-runner       \
+                -v=5                  \
+                --unmount-timeout=300 \
+                --has-alien-cache=false
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            privileged: true
+            capabilities:
+              add: ["SYS_ADMIN"]
+            allowPrivilegeEscalation: true
+          volumeMounts:
+            - mountPath: /sys
+              name: host-sys
+            - name: lib-modules
+              mountPath: /lib/modules
+              readOnly: true
+            - name: host-dev
+              mountPath: /dev
+            - name: autofs-cvmfs
+              mountPath: /cvmfs
+              mountPropagation: Bidirectional
             - name: cvmfs-localcache
               mountPath: /cvmfs-localcache
-            - name: cvmfs-config-default-local
-              mountPath: /etc/cvmfs/default.local
+            - mountPath: /etc/cvmfs/default.local
+              name: etc-cvmfs-default-conf
               subPath: default.local
-            - name: cvmfs-config-config-d
-              mountPath: /etc/cvmfs/config.d
       volumes:
         - name: plugin-dir
           hostPath:
@@ -113,12 +134,11 @@ spec:
         - name: host-dev
           hostPath:
             path: /dev
+        - name: autofs-cvmfs
+          emptyDir: {}
         - name: cvmfs-localcache
           emptyDir: {}
-        - name: cvmfs-config-default-local
-          configMap:
+        - configMap:
             name: cvmfs-csi-default-local
-        - name: cvmfs-config-config-d
-          configMap:
-            name: cvmfs-csi-config-d
+          name: etc-cvmfs-default-conf
       priorityClassName: system-node-critical
