@@ -5,9 +5,8 @@
 # These can be used e.g. when defining CVMFS client configuration.
 # ConfigMap data supports go-template expressions.
 extraConfigMaps:
-# /etc/cvmfs/default.local
-- name: cvmfs-csi-default-local
-  data:
+  # /etc/cvmfs/default.local
+  cvmfs-csi-default-local:
     default.local: |
       CVMFS_USE_GEOAPI=yes
       CVMFS_HTTP_PROXY="http://ca-proxy.cern.ch:3128"
