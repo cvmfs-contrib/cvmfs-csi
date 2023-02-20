@@ -33,7 +33,7 @@ var (
 
 	hasAlienCache = flag.Bool("has-alien-cache", false, "CVMFS client is using alien cache volume")
 
-	automountDaemonUnmountAfterIdleSeconds = flag.Int("automount-unmount-timeout", 300, "number of seconds of idle time after which an autofs-managed CVMFS mount will be unmounted. '0' means never unmount, '-1' leaves automount default option.")
+	unmountTimeoutSeconds = flag.Int("unmount-timeout", 300, "number of seconds of idle time after which an autofs-managed CVMFS mount will be unmounted. '0' means never unmount")
 )
 
 func main() {
@@ -56,7 +56,7 @@ func main() {
 	log.Infof("Command line arguments %v", os.Args)
 
 	err := automount.Init(&automount.Opts{
-		UnmountTimeoutSeconds: *automountDaemonUnmountAfterIdleSeconds,
+		UnmountTimeoutSeconds: *unmountTimeoutSeconds,
 		HasAlienCache:         *hasAlienCache,
 	})
 
