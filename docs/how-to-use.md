@@ -67,19 +67,19 @@ metadata:
   name: cvmfs-demo
 spec:
   containers:
-   - name: demo
-     image: busybox
-     imagePullPolicy: IfNotPresent
-     command: [ "/bin/sh", "-c", "trap : TERM INT; (while true; do sleep 1000; done) & wait" ]
-     volumeMounts:
-       - name: my-cvmfs
-         mountPath: /my-cvmfs
-         # CVMFS automount volumes must be mounted with HostToContainer mount propagation.
-         mountPropagation: HostToContainer
+    - name: demo
+      image: busybox
+      imagePullPolicy: IfNotPresent
+      command: [ "/bin/sh", "-c", "trap : TERM INT; (while true; do sleep 1000; done) & wait" ]
+      volumeMounts:
+        - name: my-cvmfs
+          mountPath: /my-cvmfs
+          # CVMFS automount volumes must be mounted with HostToContainer mount propagation.
+          mountPropagation: HostToContainer
   volumes:
-   - name: my-cvmfs
-     persistentVolumeClaim:
-       claimName: cvmfs
+    - name: my-cvmfs
+      persistentVolumeClaim:
+        claimName: cvmfs
 ```
 
 ```bash
@@ -129,19 +129,19 @@ metadata:
   name: cvmfs-alice
 spec:
   containers:
-   - name: idle
-     image: busybox
-     imagePullPolicy: IfNotPresent
-     command: [ "/bin/sh", "-c", "trap : TERM INT; (while true; do sleep 1000; done) & wait" ]
-     volumeMounts:
-       - name: my-cvmfs
-         subPath: alice.cern.ch
-         mountPath: /my-alice-cvmfs
-         mountPropagation: HostToContainer
+    - name: idle
+      image: busybox
+      imagePullPolicy: IfNotPresent
+      command: [ "/bin/sh", "-c", "trap : TERM INT; (while true; do sleep 1000; done) & wait" ]
+      volumeMounts:
+        - name: my-cvmfs
+          subPath: alice.cern.ch
+          mountPath: /my-alice-cvmfs
+          mountPropagation: HostToContainer
   volumes:
-   - name: my-cvmfs
-     persistentVolumeClaim:
-       claimName: cvmfs
+    - name: my-cvmfs
+      persistentVolumeClaim:
+        claimName: cvmfs
 ```
 
 ```bash
@@ -218,19 +218,19 @@ metadata:
   name: cvmfs-atlas-nightlies
 spec:
   containers:
-   - name: idle
-     image: busybox
-     imagePullPolicy: IfNotPresent
-     command: [ "/bin/sh", "-c", "trap : TERM INT; (while true; do sleep 1000; done) & wait" ]
-     volumeMounts:
-       - name: my-cvmfs-atlas-nightlies
-         mountPath: /atlas-nightlies
-         # Note that unlike in pod-single-repo-subpath.yaml, in this
-         # case we don't set mountPropagation nor subPath.
+    - name: idle
+      image: busybox
+      imagePullPolicy: IfNotPresent
+      command: [ "/bin/sh", "-c", "trap : TERM INT; (while true; do sleep 1000; done) & wait" ]
+      volumeMounts:
+        - name: my-cvmfs-atlas-nightlies
+          mountPath: /atlas-nightlies
+          # Note that unlike in pod-single-repo-subpath.yaml, in this
+          # case we don't set mountPropagation nor subPath.
   volumes:
-   - name: my-cvmfs-atlas-nightlies
-     persistentVolumeClaim:
-       claimName: cvmfs-atlas-nightlies
+    - name: my-cvmfs-atlas-nightlies
+      persistentVolumeClaim:
+        claimName: cvmfs-atlas-nightlies
 ```
 
 ```
