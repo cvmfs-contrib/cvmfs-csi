@@ -20,7 +20,7 @@ import (
 	"bytes"
 	goexec "os/exec"
 
-	"github.com/cernops/cvmfs-csi/internal/exec"
+	"github.com/cvmfs-contrib/cvmfs-csi/internal/exec"
 
 	mount "k8s.io/mount-utils"
 )

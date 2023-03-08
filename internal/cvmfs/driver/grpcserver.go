@@ -26,7 +26,7 @@ import (
 	"strings"
 	"sync/atomic"
 
-	"github.com/cernops/cvmfs-csi/internal/log"
+	"github.com/cvmfs-contrib/cvmfs-csi/internal/log"
 
 	"github.com/kubernetes-csi/csi-lib-utils/protosanitizer"
 	"google.golang.org/grpc"

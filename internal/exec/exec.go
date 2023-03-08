@@ -21,7 +21,7 @@ import (
 	"os/exec"
 	"sync/atomic"
 
-	"github.com/cernops/cvmfs-csi/internal/log"
+	"github.com/cvmfs-contrib/cvmfs-csi/internal/log"
 )
 
 // This file only provides wrappers around "os/exec" and logs the executed commands.
