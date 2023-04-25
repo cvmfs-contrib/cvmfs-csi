@@ -11,3 +11,11 @@ data:
 
     CVMFS_QUOTA_LIMIT=1000
     CVMFS_CACHE_BASE=/cvmfs-localcache
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cvmfs-csi-config-d
+  labels:
+    app: cvmfs-csi
+data:

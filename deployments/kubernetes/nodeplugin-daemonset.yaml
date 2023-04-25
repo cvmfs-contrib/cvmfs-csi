@@ -109,9 +109,11 @@ spec:
               mountPropagation: Bidirectional
             - name: cvmfs-localcache
               mountPath: /cvmfs-localcache
-            - mountPath: /etc/cvmfs/default.local
-              name: etc-cvmfs-default-conf
+            - name: etc-cvmfs-default-conf
+              mountPath: /etc/cvmfs/default.local
               subPath: default.local
+            - name: etc-cvmfs-config-d
+              mountPath: /etc/cvmfs/config.d
       volumes:
         - name: plugin-dir
           hostPath:
@@ -138,7 +140,10 @@ spec:
           emptyDir: {}
         - name: cvmfs-localcache
           emptyDir: {}
-        - configMap:
+        - name: etc-cvmfs-default-conf
+          configMap:
             name: cvmfs-csi-default-local
-          name: etc-cvmfs-default-conf
+        - name: etc-cvmfs-config-d
+          configMap:
+            name: cvmfs-csi-config-d
       priorityClassName: system-node-critical
