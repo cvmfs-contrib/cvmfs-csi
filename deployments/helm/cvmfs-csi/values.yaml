@@ -5,6 +5,9 @@
 # These can be used e.g. when defining CVMFS client configuration.
 # ConfigMap data supports go-template expressions.
 extraConfigMaps:
+# /etc/cvmfs/config.d/
+- name: cvmfs-csi-config-d
+  data: {}
 # /etc/cvmfs/default.local
 - name: cvmfs-csi-default-local
   data:
@@ -59,6 +62,9 @@ nodeplugin:
   - name: etc-cvmfs-default-conf
     configMap:
       name: cvmfs-csi-default-local
+  - name: etc-cvmfs-config-d
+    configMap:
+      name: cvmfs-csi-config-d
 
   # CVMFS CSI image and container resources specs.
   plugin:
@@ -73,6 +79,8 @@ nodeplugin:
     - name: etc-cvmfs-default-conf
       mountPath: /etc/cvmfs/default.local
       subPath: default.local
+    - name: etc-cvmfs-config-d
+      mountPath: /etc/cvmfs/config.d
 
   # csi-node-driver-registrar image and container resources specs.
   registrar:
