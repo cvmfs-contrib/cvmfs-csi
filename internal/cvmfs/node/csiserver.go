@@ -35,7 +35,12 @@ type Server struct {
 }
 
 const (
+	// autofs-managed CVMFS root mountpoint.
 	cvmfsRoot = "/cvmfs"
+	// Directory where to store per-volume CVMFS mount configuration.
+	// Used for volumes that specify cvmfsClientConfig in their volume
+	// context.
+	perVolumeConfigsDir = "/var/lib/cvmfs.csi.cern.ch/per-volume-configs"
 )
 
 var (
@@ -44,7 +49,7 @@ var (
 
 func New(nodeID string) *Server {
 	enabledCaps := []csi.NodeServiceCapability_RPC_Type{
-		// None.
+		csi.NodeServiceCapability_RPC_STAGE_UNSTAGE_VOLUME,
 	}
 
 	var caps []*csi.NodeServiceCapability
@@ -91,6 +96,11 @@ func (srv *Server) NodePublishVolume(
 	}
 
 	targetPath := req.GetTargetPath()
+	volCtx, err := newVolumeContext(req.GetVolumeContext())
+	if err != nil {
+		return nil, status.Errorf(codes.InvalidArgument,
+			"failed to parse volume context: %v", err)
+	}
 
 	if err := os.MkdirAll(targetPath, 0700); err != nil {
 		return nil, status.Errorf(codes.Internal,
@@ -105,7 +115,7 @@ func (srv *Server) NodePublishVolume(
 
 	switch mntState {
 	case msNotMounted:
-		if err := doMount(req); err != nil {
+		if err := doMount(volCtx); err != nil {
 			return nil, status.Errorf(codes.Internal, "failed to bind mount: %v", err)
 		}
 		fallthrough
@@ -118,12 +128,10 @@ func (srv *Server) NodePublishVolume(
 	}
 }
 
-func doMount(req *csi.NodePublishVolumeRequest) error {
-	targetPath := req.GetTargetPath()
-
-	if repository := req.GetVolumeContext()["repository"]; repository != "" {
+func doMount(targetPath string, volCtx *volumeContext) error {
+	if volCtx.repository != "" {
 		// Mount a single repository.
-		return bindMount(path.Join(cvmfsRoot, repository), targetPath)
+		return bindMount(path.Join(cvmfsRoot, volCtx.repository), targetPath)
 	}
 
 	// Mount the whole autofs-CVMFS root.
@@ -165,7 +173,44 @@ func (srv *Server) NodeStageVolume(
 	ctx context.Context,
 	req *csi.NodeStageVolumeRequest,
 ) (*csi.NodeStageVolumeResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "")
+	if err := validateNodeStageVolumeRequest(req); err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+
+	volCtx, err := newVolumeContext(req.GetVolumeContext())
+	if err != nil {
+		return nil, status.Errorf(codes.InvalidArgument,
+			"failed to parse volume context: %v", err)
+	}
+
+	if volCtx.clientConfig == "" {
+		// We need to stage the volume only for the cases where
+		// volume context defines a client configuration which requires
+		// a private mount.
+		return &csi.NodeStageVolumeResponse{}, nil
+	}
+
+	stagingPath := req.GetStagingTargetPath()
+
+	mntState, err := getMountState(stagingPath)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal,
+			"failed to probe mountpoint %s: %v", stagingPath, err)
+	}
+
+	switch mntState {
+	case msNotMounted:
+		if err := doMount(volCtx); err != nil {
+			return nil, status.Errorf(codes.Internal, "failed to bind mount: %v", err)
+		}
+		fallthrough
+	case msMounted:
+		return &csi.NodeStageVolumeResponse{}, nil
+	default:
+		return nil, status.Errorf(codes.Internal,
+			"unexpected mountpoint state in %s: expected %s or %s, got %s",
+			targetPath, msNotMounted, msMounted, mntState)
+	}
 }
 
 func (srv *Server) NodeUnstageVolume(
@@ -206,6 +251,13 @@ func validateNodePublishVolumeRequest(req *csi.NodePublishVolumeRequest) error {
 		return errors.New("volume access type must by Mount")
 	}
 
+	if req.GetTargetPath() == "" {
+		return errors.New("volume target path missing in request")
+	}
+
+	// We're not checking for staging target path, as older versions
+	// of the driver didn't support STAGE_UNSTAGE_VOLUME capability.
+
 	if req.GetVolumeCapability().GetAccessMode().GetMode() !=
 		csi.VolumeCapability_AccessMode_MULTI_NODE_READER_ONLY {
 		return fmt.Errorf("volume access mode must be ReadOnlyMany")
@@ -231,6 +283,57 @@ func validateNodeUnpublishVolumeRequest(req *csi.NodeUnpublishVolumeRequest) err
 
 	if req.GetTargetPath() == "" {
 		return errors.New("target path missing in request")
+	}
+
+	return nil
+}
+
+func validateNodeStageVolumeRequest(req *csi.NodeStageVolumeRequest) error {
+	if req.GetVolumeId() == "" {
+		return errors.New("volume ID missing in request")
+	}
+
+	if req.GetVolumeCapability() == nil {
+		return errors.New("volume capability missing in request")
+	}
+
+	if req.GetVolumeCapability().GetBlock() != nil {
+		return errors.New("volume access type Block is unsupported")
+	}
+
+	if req.GetVolumeCapability().GetMount() == nil {
+		return errors.New("volume access type must by Mount")
+	}
+
+	if req.StagingTargetPath() == "" {
+		return errors.New("volume staging target path missing in request")
+	}
+
+	if req.GetVolumeCapability().GetAccessMode().GetMode() !=
+		csi.VolumeCapability_AccessMode_MULTI_NODE_READER_ONLY {
+		return fmt.Errorf("volume access mode must be ReadOnlyMany")
+	}
+
+	if volCtx := req.GetVolumeContext(); len(volCtx) > 0 {
+		unsupportedVolumeParams := []string{"hash", "tag"}
+
+		for _, volParam := range unsupportedVolumeParams {
+			if _, ok := volCtx[volParam]; ok {
+				return fmt.Errorf("volume parameter %s is not supported", volParam)
+			}
+		}
+	}
+
+	return nil
+}
+
+func validateNodeUnstageVolumeRequest(req *csi.NodeUnstageVolumeRequest) error {
+	if req.GetVolumeId() == "" {
+		return errors.New("volume ID missing in request")
+	}
+
+	if req.GetStagingTargetPath() == "" {
+		return errors.New("staging target path missing in request")
 	}
 
 	return nil
