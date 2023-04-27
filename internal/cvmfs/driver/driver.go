@@ -27,9 +27,11 @@ import (
 	"github.com/cernops/cvmfs-csi/internal/cvmfs/controller"
 	"github.com/cernops/cvmfs-csi/internal/cvmfs/identity"
 	"github.com/cernops/cvmfs-csi/internal/cvmfs/node"
+	"github.com/cernops/cvmfs-csi/internal/grpcutils"
 	"github.com/cernops/cvmfs-csi/internal/log"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
+	"google.golang.org/grpc"
 	"k8s.io/apimachinery/pkg/util/validation"
 )
 
@@ -46,6 +48,10 @@ type (
 		// CSIEndpoint is URL path to the UNIX socket where the driver
 		// will serve requests.
 		CSIEndpoint string
+
+		// SinglemountRunnerEndpoint is URL path to the UNIX socket
+		// for connecting to the singlemount-runner.
+		SinglemountRunnerEndpoint string
 
 		// NodeID is unique identifier of the node on which this
 		// CVMFS CSI node plugin pod is running.
@@ -128,10 +134,10 @@ func New(opts *Opts) (*Driver, error) {
 	}, nil
 }
 
-func setupIdentityServiceRole(s *grpcServer, d *Driver) error {
+func setupIdentityServiceRole(s *grpc.Server, d *Driver) error {
 	log.Debugf("Registering Identity server")
 	csi.RegisterIdentityServer(
-		s.server,
+		s,
 		identity.New(
 			d.DriverName,
 			d.Opts.Roles[ControllerServiceRole],
@@ -169,7 +175,7 @@ func tryWithTimeout(description string, timeoutSecs int, f func() (bool, error))
 	return nil
 }
 
-func setupNodeServiceRole(s *grpcServer, d *Driver) error {
+func setupNodeServiceRole(s *grpc.Server, d *Driver) error {
 	// First wait until autofs in /cvmfs is ready.
 
 	err := tryWithTimeout(
@@ -183,7 +189,7 @@ func setupNodeServiceRole(s *grpcServer, d *Driver) error {
 
 	// We can register node server now.
 
-	ns := node.New(d.NodeID)
+	ns := node.New(d.NodeID, d.Opts.SinglemountRunnerEndpoint)
 
 	caps, err := ns.NodeGetCapabilities(
 		context.TODO(),
@@ -194,12 +200,12 @@ func setupNodeServiceRole(s *grpcServer, d *Driver) error {
 	}
 
 	log.Debugf("Registering Node server with capabilities %+v", caps.GetCapabilities())
-	csi.RegisterNodeServer(s.server, node.New(d.NodeID))
+	csi.RegisterNodeServer(s, ns)
 
 	return nil
 }
 
-func setupControllerServiceRole(s *grpcServer, d *Driver) error {
+func setupControllerServiceRole(s *grpc.Server, d *Driver) error {
 	cs := controller.New()
 
 	caps, err := cs.ControllerGetCapabilities(
@@ -211,7 +217,7 @@ func setupControllerServiceRole(s *grpcServer, d *Driver) error {
 	}
 
 	log.Debugf("Registering Controller server with capabilities %+v", caps.GetCapabilities())
-	csi.RegisterControllerServer(s.server, controller.New())
+	csi.RegisterControllerServer(s, cs)
 
 	return nil
 }
@@ -220,28 +226,28 @@ func setupControllerServiceRole(s *grpcServer, d *Driver) error {
 func (d *Driver) Run() error {
 	log.Infof("Driver: %s", d.DriverName)
 
-	s, err := newGRPCServer(d.CSIEndpoint)
+	s, err := grpcutils.NewServer(d.CSIEndpoint, grpc.UnaryInterceptor(grpcLogger))
 	if err != nil {
 		return fmt.Errorf("failed to create GRPC server: %v", err)
 	}
 
 	if d.Opts.Roles[IdentityServiceRole] {
-		if err = setupIdentityServiceRole(s, d); err != nil {
+		if err = setupIdentityServiceRole(s.GRPCServer, d); err != nil {
 			return fmt.Errorf("failed to setup identity service role: %v", err)
 		}
 	}
 
 	if d.Opts.Roles[NodeServiceRole] {
-		if err = setupNodeServiceRole(s, d); err != nil {
+		if err = setupNodeServiceRole(s.GRPCServer, d); err != nil {
 			return fmt.Errorf("failed to setup node service role: %v", err)
 		}
 	}
 
 	if d.Opts.Roles[ControllerServiceRole] {
-		if err = setupControllerServiceRole(s, d); err != nil {
+		if err = setupControllerServiceRole(s.GRPCServer, d); err != nil {
 			return fmt.Errorf("failed to setup controller service role: %v", err)
 		}
 	}
 
-	return s.serve()
+	return s.Serve()
 }

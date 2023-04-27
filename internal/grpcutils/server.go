@@ -14,21 +14,18 @@
 // limitations under the License.
 //
 
-package driver
+package grpcutils
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"net"
 	"os"
 	"path"
 	"strings"
-	"sync/atomic"
 
 	"github.com/cernops/cvmfs-csi/internal/log"
 
-	"github.com/kubernetes-csi/csi-lib-utils/protosanitizer"
 	"google.golang.org/grpc"
 )
 
@@ -38,9 +35,9 @@ type (
 		addr  string
 	}
 
-	grpcServer struct {
-		server   *grpc.Server
-		endpoint grpcEndpoint
+	Server struct {
+		GRPCServer *grpc.Server
+		endpoint   grpcEndpoint
 	}
 )
 
@@ -49,24 +46,15 @@ const (
 	unixDomainSocketProto  = "unix"
 )
 
-var (
-	// Counter value used for pairing up GRPC call and response log messages.
-	grpcCallCounter uint64
-)
-
-func fmtGRPCLogMsg(grpcCallID uint64, msg string) string {
-	return fmt.Sprintf("Call-ID %d: %s", grpcCallID, msg)
-}
-
-func newGRPCServer(endpoint string) (*grpcServer, error) {
+func NewServer(endpoint string, opt ...grpc.ServerOption) (*Server, error) {
 	ep, err := newGRPCEndpoint(endpoint)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse endpoint %q: %v", endpoint, err)
 	}
 
-	return &grpcServer{
-		server:   grpc.NewServer(grpc.UnaryInterceptor(grpcLogger)),
-		endpoint: ep,
+	return &Server{
+		GRPCServer: grpc.NewServer(opt...),
+		endpoint:   ep,
 	}, nil
 }
 
@@ -89,7 +77,7 @@ func newGRPCEndpoint(endpoint string) (grpcEndpoint, error) {
 	}, nil
 }
 
-func (s *grpcServer) serve() error {
+func (s *Server) Serve() error {
 	if s.endpoint.proto == unixDomainSocketProto {
 		// Try to delete any existing socket at the endpoint path before continuing.
 		if err := tryRemoveSocket(s.endpoint.addr); err != nil {
@@ -105,7 +93,7 @@ func (s *grpcServer) serve() error {
 
 	log.Infof("Listening for connections on %s", listener.Addr())
 
-	return s.server.Serve(listener)
+	return s.GRPCServer.Serve(listener)
 }
 
 func tryRemoveSocket(p string) error {
@@ -128,20 +116,4 @@ func tryRemoveSocket(p string) error {
 	}
 
 	return err
-}
-
-func grpcLogger(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
-	grpcCallID := atomic.AddUint64(&grpcCallCounter, 1)
-
-	log.DebugfWithContext(ctx, fmtGRPCLogMsg(grpcCallID, fmt.Sprintf("Call: %s", info.FullMethod)))
-	log.DebugfWithContext(ctx, fmtGRPCLogMsg(grpcCallID, fmt.Sprintf("Request: %s", protosanitizer.StripSecrets(req))))
-
-	resp, err := handler(ctx, req)
-	if err != nil {
-		log.ErrorfWithContext(ctx, fmtGRPCLogMsg(grpcCallID, fmt.Sprintf("Error: %v", err)))
-	} else {
-		log.DebugfWithContext(ctx, fmtGRPCLogMsg(grpcCallID, fmt.Sprintf("Response: %s", protosanitizer.StripSecrets(resp))))
-	}
-
-	return resp, err
 }

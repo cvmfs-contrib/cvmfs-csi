@@ -10,8 +10,8 @@ spec:
     type: OnDelete
   selector:
     matchLabels:
-      component: nodeplugin
       app: cvmfs-csi
+      component: nodeplugin
   template:
     metadata:
       labels:
@@ -25,7 +25,7 @@ spec:
           image: registry.k8s.io/sig-storage/csi-node-driver-registrar:v2.5.1
           imagePullPolicy: IfNotPresent
           args:
-            - -v=5
+            - -v=4
             - --csi-address=$(CSI_ADDRESS)
             - --kubelet-registration-path=$(KUBELET_CSI_REGISTRATION_PATH)
           env:
@@ -34,7 +34,7 @@ spec:
             - name: KUBELET_CSI_REGISTRATION_PATH
               value: /var/lib/kubelet/plugins/cvmfs.csi.cern.ch/csi.sock
           volumeMounts:
-            - name: plugin-dir
+            - name: socket-dir
               mountPath: /csi
             - name: registration-dir
               mountPath: /registration
@@ -42,12 +42,13 @@ spec:
           image: registry.cern.ch/magnum/cvmfs-csi:latest
           command: [/csi-cvmfsplugin]
           args:
-            - -v=5
+            - -v=4
             - --nodeid=$(NODE_ID)
             - --endpoint=$(CSI_ENDPOINT)
             - --drivername=$(CSI_DRIVERNAME)
             - --role=identity,node
             - --automount-startup-timeout=10
+            - --singlemount-runner-endpoint=unix:///var/lib/cvmfs.csi.cern.ch/singlemount-runner.sock
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true
@@ -64,13 +65,16 @@ spec:
             - name: CSI_DRIVERNAME
               value: cvmfs.csi.cern.ch
           volumeMounts:
-            - name: plugin-dir
-              mountPath: /var/lib/kubelet/plugins/cvmfs.csi.cern.ch
+            - name: plugins-dir
+              mountPath: /var/lib/kubelet/plugins
+              mountPropagation: Bidirectional
             - name: pods-mount-dir
               mountPath: /var/lib/kubelet/pods
               mountPropagation: Bidirectional
-            - mountPath: /sys
-              name: host-sys
+            - name: runtime-metadata
+              mountPath: /var/lib/cvmfs.csi.cern.ch
+            - name: host-sys
+              mountPath: /sys
             - name: lib-modules
               mountPath: /lib/modules
               readOnly: true
@@ -87,7 +91,7 @@ spec:
             - |
               ulimit -n 1000000
               /automount-runner       \
-                -v=5                  \
+                -v=4                  \
                 --unmount-timeout=300 \
                 --has-alien-cache=false
           imagePullPolicy: IfNotPresent
@@ -109,16 +113,51 @@ spec:
               mountPropagation: Bidirectional
             - name: cvmfs-localcache
               mountPath: /cvmfs-localcache
-            - name: etc-cvmfs-default-conf
-              mountPath: /etc/cvmfs/default.local
+            - mountPath: /etc/cvmfs/default.local
+              name: etc-cvmfs-default-conf
               subPath: default.local
-            - name: etc-cvmfs-config-d
-              mountPath: /etc/cvmfs/config.d
+            - mountPath: /etc/cvmfs/config.d
+              name: etc-cvmfs-config-d
+        - name: singlemount
+          image: registry.cern.ch/magnum/cvmfs-csi:latest
+          command:
+            - /bin/bash
+            - -c
+            - |
+              ulimit -n 1000000
+              /singlemount-runner \
+                -v=4              \
+                --endpoint=unix:///var/lib/cvmfs.csi.cern.ch/singlemount-runner.sock
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            privileged: true
+            capabilities:
+              add: ["SYS_ADMIN"]
+            allowPrivilegeEscalation: true
+          volumeMounts:
+            - name: plugins-dir
+              mountPath: /var/lib/kubelet/plugins
+              mountPropagation: Bidirectional
+            - name: pods-mount-dir
+              mountPath: /var/lib/kubelet/pods
+              mountPropagation: Bidirectional
+            - mountPath: /sys
+              name: host-sys
+            - name: lib-modules
+              mountPath: /lib/modules
+              readOnly: true
+            - name: host-dev
+              mountPath: /dev
+            - name: runtime-metadata
+              mountPath: /var/lib/cvmfs.csi.cern.ch
       volumes:
-        - name: plugin-dir
+        - name: socket-dir
           hostPath:
             path: /var/lib/kubelet/plugins/cvmfs.csi.cern.ch
             type: DirectoryOrCreate
+        - name: plugins-dir
+          hostPath:
+            path: /var/lib/kubelet/plugins
         - name: registration-dir
           hostPath:
             path: /var/lib/kubelet/plugins_registry
@@ -138,12 +177,14 @@ spec:
             path: /dev
         - name: autofs-cvmfs
           emptyDir: {}
+        - name: runtime-metadata
+          emptyDir: {}
         - name: cvmfs-localcache
           emptyDir: {}
-        - name: etc-cvmfs-default-conf
-          configMap:
+        - configMap:
             name: cvmfs-csi-default-local
-        - name: etc-cvmfs-config-d
-          configMap:
+          name: etc-cvmfs-default-conf
+        - configMap:
             name: cvmfs-csi-config-d
+          name: etc-cvmfs-config-d
       priorityClassName: system-node-critical

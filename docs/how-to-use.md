@@ -8,11 +8,13 @@ Table of contents:
     + [Example: Mounting single CVMFS repository using `repository` parameter](#example-mounting-single-cvmfs-repository-using-repository-attribute)
   * [Adding CVMFS repository configuration](#adding-cvmfs-repository-configuration)
     + [Example: adding ilc.desy.de CVMFS repository](#example-adding-ilcdesyde-cvmfs-repository)
+  * [CVMFS mounts with per-volume configuration](#cvmfs-mounts-with-per-volume-configuration)
+    + [Example: Mounting a repository snapshot at `CVMFS_REPOSITORY_DATE`](#example-mounting-a-repository-snapshot-at-cvmfs-repository-date)
   * [Troubleshooting](#troubleshooting)
     + [`Too many levels of symbolic links`](#too-many-levels-of-symbolic-links)
     + [`Transport endpoint is not connected` or repository directory empty](#transport-endpoint-is-not-connected-or-repository-directory-empty)
 
-With CVMFS CSI, users can expose CVMFS repositories as PersistentVolume objects and mount those in Pods. CVMFS CSI manages repository access using [autofs](https://www.kernel.org/doc/html/latest/filesystems/autofs.html).
+With CVMFS CSI, users can expose CVMFS repositories as PersistentVolume objects and mount those in Pods.
 
 CVMFS CSI supports volume provisioning, however the provisioned volumes only fulfill the role of a reference to CVMFS repositories used inside the CO (e.g. Kubernetes), and are not modifying the CVMFS store in any way.
 
@@ -292,6 +294,51 @@ drwxr-xr-x    3 999      997           4096 Aug  1 19:08 key4hep
 drwxr-xr-x    3 999      997           4096 Jul  1  2015 sidsoft
 drwxr-xr-x   11 999      997           4096 Oct  1  2020 sw
 -rw-r--r--    1 999      997            887 Apr 20 12:13 test
+```
+
+## CVMFS mounts with per-volume configuration
+
+Users can mount CVMFS repositories and supply configuration as a part of volume attributes. This is done by setting following three attributes:
+
+* `clientConfig`: CVMFS client configuration passed to `cvmfs2 -o config=<stored clientConfig>`. See [CVMFS private mount points](https://cvmfs.readthedocs.io/en/stable/cpt-configure.html#sct-privatemount) for more details. Use either `clientConfig` or `clientConfigFilepath`.
+* `clientConfigFilepath`: Path to CVMFS client configuration file passed to `cvmfs2 -o config=<stored clientConfig from clientConfigFilepath>`. The file must be accessible to the `singlemount` container (e.g. mounted as a ConfigMap). Use either `clientConfig` or `clientConfigFilepath`.
+* `repository`: Repository to mount.
+* `sharedMountID`: Optional. Arbirtrary, user-defined identifier. Volumes with matching `sharedMountID` will re-use the same CVMFS mount, saving resources on the node. This is useful for cases when there are multiple volumes describing a single CVMFS configuration-repository pair (e.g. PVCs in multiple Kubernetes namespaces for the same CVMFS repo). The volumes' attributes must be identical. Defaults to `PersistentVolume.spec.csi.volumeHandle`.
+
+Following CVMFS config parameters are set by default:
+
+* `CVMFS_RELOAD_SOCKETS`: `/var/lib/cvmfs.csi.cern.ch/single/<sharedMountID>`
+
+### Example: Mounting a repository snapshot at `CVMFS_REPOSITORY_DATE`
+
+First, create PV and PVC with `clientConfig` and `repository` defined:
+
+```yaml
+# ../example/volume-pv-pvc-20220301.yaml
+
+...
+
+      repository: atlas.cern.ch
+      sharedMountID: atlas-20220301
+      clientConfig: |
+        CVMFS_SERVER_URL=http://cvmfs-stratum-one.cern.ch/cvmfs/atlas.cern.ch
+        CVMFS_KEYS_DIR=/etc/cvmfs/keys/cern.ch
+        CVMFS_HTTP_PROXY=DIRECT
+        CVMFS_REPOSITORY_DATE=2022-03-01T00:00:00Z
+```
+
+Second, create a Pod that mounts the PVC:
+
+```yaml
+# ../example/pod-atlas-20220301.yaml
+
+     volumeMounts:
+       - name: atlas-20220301
+         mountPath: /atlas.cern.ch
+  volumes:
+   - name: atlas-20220301
+     persistentVolumeClaim:
+       claimName: cvmfs-atlas-20220301
 ```
 
 ## Troubleshooting

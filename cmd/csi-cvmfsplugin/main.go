@@ -62,8 +62,9 @@ var (
 	version    = flag.Bool("version", false, "Print driver version and exit.")
 	roles      rolesFlag
 
-	hasAlienCache        = flag.Bool("has-alien-cache", false, "(DEPRECATED: use automount-runner --has-alien-cache) CVMFS client is using alien cache volume")
-	startAutomountDaemon = flag.Bool("start-automount-daemon", true, "(DEPRECATED: use automount-runner) start automount daemon when initializing CVMFS CSI driver")
+	hasAlienCache             = flag.Bool("has-alien-cache", false, "(DEPRECATED: use automount-runner --has-alien-cache) CVMFS client is using alien cache volume")
+	startAutomountDaemon      = flag.Bool("start-automount-daemon", true, "(DEPRECATED: use automount-runner) start automount daemon when initializing CVMFS CSI driver")
+	singlemountRunnerendpoint = flag.String("singlemount-runner-endpoint", "unix:///var/lib/cvmfs.cern.ch/singlemount-runner.sock", "singlemount-runner endpoint.")
 
 	automountDaemonStartupTimeoutSeconds   = flag.Int("automount-startup-timeout", 10, "number of seconds to wait for automount daemon to start up before giving up and exiting. '0' means wait forever")
 	automountDaemonUnmountAfterIdleSeconds = flag.Int("automount-unmount-timeout", 300, "(DEPRECATED: use automount-runner --unmount-timeout) number of seconds of idle time after which an autofs-managed CVMFS mount will be unmounted. '0' means never unmount, '-1' leaves automount default option.")
@@ -96,10 +97,11 @@ func main() {
 	}
 
 	driver, err := driver.New(&driver.Opts{
-		DriverName:  *driverName,
-		CSIEndpoint: *endpoint,
-		NodeID:      *nodeId,
-		Roles:       driverRoles,
+		DriverName:                *driverName,
+		CSIEndpoint:               *endpoint,
+		SinglemountRunnerEndpoint: *singlemountRunnerendpoint,
+		NodeID:                    *nodeId,
+		Roles:                     driverRoles,
 
 		AutomountDaemonStartupTimeoutSeconds: *automountDaemonStartupTimeoutSeconds,
 	})

@@ -68,13 +68,16 @@ all: build
 #  build
 
 .PHONY: build
-build: $(BINDIR)/csi-cvmfsplugin $(BINDIR)/automount-runner
+build: $(BINDIR)/csi-cvmfsplugin $(BINDIR)/automount-runner $(BINDIR)/singlemount-runner
 
 $(BINDIR)/csi-cvmfsplugin: $(SRC)
 	go build $(GOFLAGS) -tags '$(TAGS)' -ldflags '$(LDFLAGS)' -o $@ ./cmd/csi-cvmfsplugin
 
 $(BINDIR)/automount-runner: $(SRC)
 	go build $(GOFLAGS) -tags '$(TAGS)' -ldflags '$(LDFLAGS)' -o $@ ./cmd/automount-runner
+
+$(BINDIR)/singlemount-runner: $(SRC)
+	go build $(GOFLAGS) -tags '$(TAGS)' -ldflags '$(LDFLAGS)' -o $@ ./cmd/singlemount-runner
 
 # ------------------------------------------------------------------------------
 #  test
@@ -127,6 +130,7 @@ build-cross: LDFLAGS += -extldflags "-static"
 build-cross: $(GOX)
 	CGO_ENABLED=0 $(GOX) -parallel=3 -output="_dist/{{.OS}}-{{.Arch}}/csi-cvmfsplugin_{{.OS}}_{{.Arch}}" -osarch='$(TARGETS)' $(GOFLAGS) -tags '$(TAGS)' -ldflags '$(LDFLAGS)' ./cmd/csi-cvmfsplugin
 	CGO_ENABLED=0 $(GOX) -parallel=3 -output="_dist/{{.OS}}-{{.Arch}}/automount-runner_{{.OS}}_{{.Arch}}" -osarch='$(TARGETS)' $(GOFLAGS) -tags '$(TAGS)' -ldflags '$(LDFLAGS)' ./cmd/automount-runner
+	CGO_ENABLED=0 $(GOX) -parallel=3 -output="_dist/{{.OS}}-{{.Arch}}/singlemount-runner_{{.OS}}_{{.Arch}}" -osarch='$(TARGETS)' $(GOFLAGS) -tags '$(TAGS)' -ldflags '$(LDFLAGS)' ./cmd/singlemount-runner
 
 .PHONY: dist
 dist:
@@ -160,6 +164,7 @@ image: build-cross
 	mkdir -p bin
 	cp _dist/linux-amd64/csi-cvmfsplugin_linux_amd64 bin/csi-cvmfsplugin
 	cp _dist/linux-amd64/automount-runner_linux_amd64 bin/automount-runner
+	cp _dist/linux-amd64/singlemount-runner_linux_amd64 bin/singlemount-runner
 	sudo $(IMAGE_BUILD_TOOL) build -t cvmfs-csi:${DOCKER_TAG} -f deployments/docker/Dockerfile .
 
 # ------------------------------------------------------------------------------

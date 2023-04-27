@@ -25,7 +25,7 @@ spec:
           image: k8s.gcr.io/sig-storage/csi-provisioner:v3.2.1
           imagePullPolicy: IfNotPresent
           args:
-            - -v=5
+            - -v=4
             - --csi-address=$(CSI_ADDRESS)
             - --leader-election=true
           env:
@@ -39,7 +39,7 @@ spec:
           imagePullPolicy: IfNotPresent
           command: [/csi-cvmfsplugin]
           args:
-            - -v=5
+            - -v=4
             - --nodeid=$(NODE_ID)
             - --endpoint=$(CSI_ENDPOINT)
             - --drivername=$(CSI_DRIVERNAME)
