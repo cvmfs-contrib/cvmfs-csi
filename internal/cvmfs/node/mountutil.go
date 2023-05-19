@@ -21,50 +21,7 @@ import (
 	goexec "os/exec"
 
 	"github.com/cernops/cvmfs-csi/internal/exec"
-
-	mount "k8s.io/mount-utils"
 )
-
-type (
-	mountState int
-)
-
-const (
-	msUnknown mountState = iota
-	msNotMounted
-	msMounted
-	msCorrupted
-)
-
-var (
-	dummyMounter = mount.New("")
-)
-
-func (ms mountState) String() string {
-	return [...]string{
-		"UNKNOWN",
-		"NOT_MOUNTED",
-		"MOUNTED",
-		"CORRUPTED",
-	}[int(ms)]
-}
-
-func getMountState(p string) (mountState, error) {
-	isNotMnt, err := mount.IsNotMountPoint(dummyMounter, p)
-	if err != nil {
-		if mount.IsCorruptedMnt(err) {
-			return msCorrupted, nil
-		}
-
-		return msUnknown, err
-	}
-
-	if !isNotMnt {
-		return msMounted, nil
-	}
-
-	return msNotMounted, nil
-}
 
 func bindMount(from, to string) error {
 	_, err := exec.CombinedOutput(goexec.Command("mount", "--bind", from, to))

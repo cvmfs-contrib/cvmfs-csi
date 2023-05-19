@@ -33,7 +33,7 @@ spec:
             - name: KUBELET_CSI_REGISTRATION_PATH
               value: {{ .Values.kubeletDirectory }}/plugins/{{ .Values.csiDriverName }}/{{ .Values.cvmfsCSIPluginSocketFile }}
           volumeMounts:
-            - name: plugin-dir
+            - name: socket-dir
               mountPath: /csi
             - name: registration-dir
               mountPath: /registration
@@ -50,6 +50,7 @@ spec:
             - --drivername=$(CSI_DRIVERNAME)
             - --role=identity,node
             - --automount-startup-timeout={{ .Values.automountDaemonStartupTimeout }}
+            - --singlemount-runner-endpoint=unix:///var/lib/cvmfs.csi.cern.ch/singlemount-runner.sock
           imagePullPolicy: {{ .Values.nodeplugin.plugin.image.pullPolicy }}
           securityContext:
             privileged: true
@@ -66,13 +67,16 @@ spec:
             - name: CSI_DRIVERNAME
               value: {{ .Values.csiDriverName }}
           volumeMounts:
-            - name: plugin-dir
-              mountPath: {{ .Values.kubeletDirectory }}/plugins/{{ .Values.csiDriverName }}
+            - name: plugins-dir
+              mountPath: {{ .Values.kubeletDirectory }}/plugins
+              mountPropagation: Bidirectional
             - name: pods-mount-dir
               mountPath: /var/lib/kubelet/pods
               mountPropagation: Bidirectional
-            - mountPath: /sys
-              name: host-sys
+            - name: runtime-metadata
+              mountPath: /var/lib/cvmfs.csi.cern.ch
+            - name: host-sys
+              mountPath: /sys
             - name: lib-modules
               mountPath: /lib/modules
               readOnly: true
@@ -124,11 +128,52 @@ spec:
           {{- with .Values.nodeplugin.plugin.resources }}
           resources: {{ toYaml . | nindent 12 }}
           {{- end }}
+        - name: singlemount
+          image: {{ .Values.nodeplugin.singlemount.image.repository }}:{{ .Values.nodeplugin.singlemount.image.tag }}
+          command:
+            - /bin/bash
+            - -c
+            - |
+              ulimit -n {{ .Values._rlimit_nofile }}
+              /singlemount-runner                                             \
+                -v={{ .Values.logVerbosityLevel }}                            \
+                --endpoint=unix:///var/lib/cvmfs.csi.cern.ch/singlemount-runner.sock
+          imagePullPolicy: {{ .Values.nodeplugin.singlemount.image.pullPolicy }}
+          securityContext:
+            privileged: true
+            capabilities:
+              add: ["SYS_ADMIN"]
+            allowPrivilegeEscalation: true
+          volumeMounts:
+            - name: plugins-dir
+              mountPath: {{ .Values.kubeletDirectory }}/plugins
+              mountPropagation: Bidirectional
+            - name: pods-mount-dir
+              mountPath: /var/lib/kubelet/pods
+              mountPropagation: Bidirectional
+            - mountPath: /sys
+              name: host-sys
+            - name: lib-modules
+              mountPath: /lib/modules
+              readOnly: true
+            - name: host-dev
+              mountPath: /dev
+            - name: runtime-metadata
+              mountPath: /var/lib/cvmfs.csi.cern.ch
+            {{- with .Values.nodeplugin.singlemount.extraVolumeMounts }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          {{- with .Values.nodeplugin.singlemount.resources }}
+          resources: {{ toYaml . | nindent 12 }}
+          {{- end }}
       volumes:
-        - name: plugin-dir
+        - name: socket-dir
           hostPath:
             path: {{ .Values.kubeletDirectory }}/plugins/{{ .Values.csiDriverName }}
             type: DirectoryOrCreate
+        - name: plugins-dir
+          hostPath:
+            path: {{ .Values.kubeletDirectory }}/plugins
         - name: registration-dir
           hostPath:
             path: {{ .Values.kubeletDirectory }}/plugins_registry
@@ -147,6 +192,8 @@ spec:
           hostPath:
             path: /dev
         - name: autofs-cvmfs
+          emptyDir: {}
+        - name: runtime-metadata
           emptyDir: {}
         - name: cvmfs-localcache
           {{- toYaml .Values.cache.local.volumeSpec | nindent 10 }}

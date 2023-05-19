@@ -7,5 +7,6 @@ RUN dnf install -y http://ecsft.cern.ch/dist/cvmfs/cvmfs-release/cvmfs-release-l
 
 COPY bin/csi-cvmfsplugin /csi-cvmfsplugin
 COPY bin/automount-runner /automount-runner
+COPY bin/singlemount-runner /singlemount-runner
 
-RUN chmod +x /csi-cvmfsplugin /automount-runner
+RUN chmod +x /csi-cvmfsplugin /automount-runner /singlemount-runner

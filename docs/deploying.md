@@ -69,3 +69,10 @@ CVMFS CSI driver executable accepts following set of command line arguments:
 |`--has-alien-cache`|`false`|(boolean value) CVMFS client is using alien cache volume.|
 |`--unmount-timeout`|_-1_|number of seconds of idle time after which an autofs-managed CVMFS mount will be unmounted. `0` means never unmount.|
 |`--version`|_false_|(boolean value) Print driver version and exit.|
+
+## singlemount-runner command line arguments
+
+|Name|Default value|Description|
+|--|--|--|
+|`--endpoint`|`unix:///var/lib/cvmfs.cern.ch/singlemount-runner.sock`|Where to create singlemount-runner's gRPC endpoint.|
+|`--version`|_false_|(boolean value) Print driver version and exit.|

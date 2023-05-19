@@ -17,7 +17,9 @@
 package exec
 
 import (
+	"bufio"
 	"fmt"
+	"io"
 	"os/exec"
 	"sync/atomic"
 
@@ -31,19 +33,19 @@ var (
 	execCounter uint64
 )
 
-func fmtLogMsg(execID uint64, msg string) string {
+func FmtLogMsg(execID uint64, msg string) string {
 	return fmt.Sprintf("Exec-ID %d: %s", execID, msg)
 }
 
 func Run(cmd *exec.Cmd) error {
 	c := atomic.AddUint64(&execCounter, 1)
-	log.InfofDepth(2, fmtLogMsg(c, "Running command env=%v prog=%s cmd=%v"), cmd.Env, cmd.Path, cmd.Args)
+	log.InfofDepth(2, FmtLogMsg(c, "Running command env=%v prog=%s cmd=%v"), cmd.Env, cmd.Path, cmd.Args)
 
 	err := cmd.Run()
-	log.InfofDepth(2, fmtLogMsg(c, "Process exited: %s"), cmd.ProcessState)
+	log.InfofDepth(2, FmtLogMsg(c, "Process exited: %s"), cmd.ProcessState)
 
 	if err != nil {
-		log.ErrorfDepth(2, fmtLogMsg(c, "Error: %v"), err)
+		log.ErrorfDepth(2, FmtLogMsg(c, "Error: %v"), err)
 	}
 
 	return err
@@ -51,13 +53,13 @@ func Run(cmd *exec.Cmd) error {
 
 func Output(cmd *exec.Cmd) ([]byte, error) {
 	c := atomic.AddUint64(&execCounter, 1)
-	log.InfofDepth(2, fmtLogMsg(c, "Running command env=%v prog=%s args=%v"), cmd.Env, cmd.Path, cmd.Args)
+	log.InfofDepth(2, FmtLogMsg(c, "Running command env=%v prog=%s args=%v"), cmd.Env, cmd.Path, cmd.Args)
 
 	out, err := cmd.Output()
-	log.InfofDepth(2, fmtLogMsg(c, "Process exited: %s"), cmd.ProcessState)
+	log.InfofDepth(2, FmtLogMsg(c, "Process exited: %s"), cmd.ProcessState)
 
 	if err != nil {
-		log.ErrorfDepth(2, fmtLogMsg(c, "Error: %v"), err)
+		log.ErrorfDepth(2, FmtLogMsg(c, "Error: %v"), err)
 	}
 
 	return out, err
@@ -65,14 +67,41 @@ func Output(cmd *exec.Cmd) ([]byte, error) {
 
 func CombinedOutput(cmd *exec.Cmd) ([]byte, error) {
 	c := atomic.AddUint64(&execCounter, 1)
-	log.InfofDepth(2, fmtLogMsg(c, "Running command env=%v prog=%s args=%v"), cmd.Env, cmd.Path, cmd.Args)
+	log.InfofDepth(2, FmtLogMsg(c, "Running command env=%v prog=%s args=%v"), cmd.Env, cmd.Path, cmd.Args)
 
 	out, err := cmd.CombinedOutput()
-	log.InfofDepth(2, fmtLogMsg(c, "Process exited: %s"), cmd.ProcessState)
+	log.InfofDepth(2, FmtLogMsg(c, "Process exited: %s"), cmd.ProcessState)
 
 	if err != nil {
-		log.ErrorfDepth(2, fmtLogMsg(c, "Error: %v; Output: %s"), err, out)
+		log.ErrorfDepth(2, FmtLogMsg(c, "Error: %v; Output: %s"), err, out)
 	}
 
 	return out, err
+}
+
+func RunAndLogCombined(cmd *exec.Cmd) error {
+	return RunAndDoCombined(cmd, func(execID uint64, line string) {
+		log.Infof(FmtLogMsg(execID, line))
+	})
+}
+
+func RunAndDoCombined(cmd *exec.Cmd, eachCombinedOutLine func(execID uint64, line string)) error {
+	c := atomic.AddUint64(&execCounter, 1)
+	log.InfofDepth(2, FmtLogMsg(c, "Running command env=%v prog=%s args=%v"), cmd.Env, cmd.Path, cmd.Args)
+
+	rd, wr := io.Pipe()
+	defer rd.Close()
+	defer wr.Close()
+
+	cmd.Stdout = wr
+	cmd.Stderr = wr
+
+	go func() {
+		scanner := bufio.NewScanner(rd)
+		for scanner.Scan() {
+			eachCombinedOutLine(c, scanner.Text())
+		}
+	}()
+
+	return cmd.Run()
 }
