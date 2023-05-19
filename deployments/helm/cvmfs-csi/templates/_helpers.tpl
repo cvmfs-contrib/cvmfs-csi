@@ -127,7 +127,8 @@ component: controllerplugin
 {{ .Values.nodeplugin.labelsOverride }}
 {{- else -}}
 {{ include "cvmfs-csi.common.metaLabels" . }}
-{{ include "cvmfs-csi.nodeplugin.matchLabels" . }}
+component: nodeplugin
+release: {{ .Release.Name }}
 {{- end -}}
 {{- end -}}
 
@@ -136,6 +137,7 @@ component: controllerplugin
 {{ .Values.controllerplugin.labelsOverride }}
 {{- else -}}
 {{ include "cvmfs-csi.common.metaLabels" . }}
-{{ include "cvmfs-csi.controllerplugin.matchLabels" . }}
+component: controllerplugin
+release: {{ .Release.Name }}
 {{- end -}}
 {{- end -}}
