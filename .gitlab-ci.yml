@@ -19,7 +19,7 @@ build-bin:
   artifacts:
     expire_in: '10 minutes'
     paths:
-      - bin/csi-cvmfsplugin
+      - bin/
   script:
     - make
 
