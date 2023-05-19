@@ -22,7 +22,7 @@ spec:
       hostPID: true
       containers:
         - name: registrar
-          image: registry.k8s.io/sig-storage/csi-node-driver-registrar:v2.5.1
+          image: registry.k8s.io/sig-storage/csi-node-driver-registrar:v2.8.0
           imagePullPolicy: IfNotPresent
           args:
             - -v=4
