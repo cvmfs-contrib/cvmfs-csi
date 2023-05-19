@@ -39,7 +39,7 @@ spec:
             - name: registration-dir
               mountPath: /registration
         - name: nodeplugin
-          image: registry.cern.ch/magnum/cvmfs-csi:v2.2.0-rc.0
+          image: registry.cern.ch/magnum/cvmfs-csi:v2.2.0
           command: [/csi-cvmfsplugin]
           args:
             - -v=4
@@ -84,7 +84,7 @@ spec:
               mountPath: /cvmfs
               mountPropagation: Bidirectional
         - name: automount
-          image: registry.cern.ch/magnum/cvmfs-csi:v2.2.0-rc.0
+          image: registry.cern.ch/magnum/cvmfs-csi:v2.2.0
           command:
             - /bin/bash
             - -c
@@ -119,7 +119,7 @@ spec:
             - mountPath: /etc/cvmfs/config.d
               name: etc-cvmfs-config-d
         - name: singlemount
-          image: registry.cern.ch/magnum/cvmfs-csi:v2.2.0-rc.0
+          image: registry.cern.ch/magnum/cvmfs-csi:v2.2.0
           command:
             - /bin/bash
             - -c
