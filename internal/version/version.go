@@ -27,6 +27,7 @@ var (
 	buildTime = time.Now()
 	version   = "unreleased"
 	commit    string
+	treestate string
 	metadata  string
 )
 
@@ -41,6 +42,11 @@ func Commit() string {
 	return commit
 }
 
+// TreeState returns the git tree state. Can be "clean" or "dirty".
+func TreeState() string {
+	return treestate
+}
+
 // Metadata returns metadata passed during build.
 func Metadata() string {
 	return metadata
@@ -53,6 +59,6 @@ func BuildTime() time.Time {
 
 // FullVersion constructs a string with full version information.
 func FullVersion() string {
-	return fmt.Sprintf("%s (commit: %s; build time: %s; metadata: %s)",
-		Version(), Commit(), Metadata(), BuildTime())
+	return fmt.Sprintf("%s (commit: %s (%s); build time: %s; metadata: %s)",
+		Version(), Commit(), TreeState(), BuildTime(), Metadata())
 }
