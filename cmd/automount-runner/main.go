@@ -21,9 +21,9 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/cernops/cvmfs-csi/internal/cvmfs/automount"
-	"github.com/cernops/cvmfs-csi/internal/log"
-	cvmfsversion "github.com/cernops/cvmfs-csi/internal/version"
+	"github.com/cvmfs-contrib/cvmfs-csi/internal/cvmfs/automount"
+	"github.com/cvmfs-contrib/cvmfs-csi/internal/log"
+	cvmfsversion "github.com/cvmfs-contrib/cvmfs-csi/internal/version"
 
 	"k8s.io/klog/v2"
 )

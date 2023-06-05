@@ -25,8 +25,8 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/cernops/cvmfs-csi/internal/exec"
-	"github.com/cernops/cvmfs-csi/internal/log"
+	"github.com/cvmfs-contrib/cvmfs-csi/internal/exec"
+	"github.com/cvmfs-contrib/cvmfs-csi/internal/log"
 )
 
 const (

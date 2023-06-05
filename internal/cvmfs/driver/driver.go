@@ -23,12 +23,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cernops/cvmfs-csi/internal/cvmfs/automount"
-	"github.com/cernops/cvmfs-csi/internal/cvmfs/controller"
-	"github.com/cernops/cvmfs-csi/internal/cvmfs/identity"
-	"github.com/cernops/cvmfs-csi/internal/cvmfs/node"
-	"github.com/cernops/cvmfs-csi/internal/grpcutils"
-	"github.com/cernops/cvmfs-csi/internal/log"
+	"github.com/cvmfs-contrib/cvmfs-csi/internal/cvmfs/automount"
+	"github.com/cvmfs-contrib/cvmfs-csi/internal/cvmfs/controller"
+	"github.com/cvmfs-contrib/cvmfs-csi/internal/cvmfs/identity"
+	"github.com/cvmfs-contrib/cvmfs-csi/internal/cvmfs/node"
+	"github.com/cvmfs-contrib/cvmfs-csi/internal/grpcutils"
+	"github.com/cvmfs-contrib/cvmfs-csi/internal/log"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"google.golang.org/grpc"

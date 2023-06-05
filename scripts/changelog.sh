@@ -25,4 +25,4 @@ if ! [ -x "$(command -v github_changelog_generator)" ]; then
   export PATH=$PATH:$(find ~/.gem -name bin | tail -1)
 fi
 
-github_changelog_generator -u cernops -p cvmfs-csi --token $GITHUB_TOKEN --since-tag $(git describe --abbrev=0 --tags `git rev-list --tags --skip=1 --max-count=1`)
+github_changelog_generator -u cvmfs-contrib -p cvmfs-csi --token $GITHUB_TOKEN --since-tag $(git describe --abbrev=0 --tags `git rev-list --tags --skip=1 --max-count=1`)
