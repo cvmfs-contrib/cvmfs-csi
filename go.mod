@@ -1,4 +1,4 @@
-module github.com/cernops/cvmfs-csi
+module github.com/cvmfs-contrib/cvmfs-csi
 
 go 1.20
 

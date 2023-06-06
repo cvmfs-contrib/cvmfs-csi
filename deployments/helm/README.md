@@ -21,7 +21,7 @@ helm install cvmfs cern/cvmfs-csi
 
 To use this Helm chart, clone this repository and install the chart:
 ```
-git clone https://github.com/cernops/cvmfs-csi
+git clone https://github.com/cvmfs-contrib/cvmfs-csi
 ```
 
 Helm v2 installation:

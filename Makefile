@@ -48,7 +48,7 @@ ifdef VERSION
 endif
 BINARY_VERSION ?= ${GIT_TAG}
 
-BASE_PKG = github.com/cernops/cvmfs-csi
+BASE_PKG = github.com/cvmfs-contrib/cvmfs-csi
 # Only set Version if building a tag or VERSION is set
 ifneq ($(BINARY_VERSION),)
 	LDFLAGS += -X ${BASE_PKG}/internal/version.version=${BINARY_VERSION}
