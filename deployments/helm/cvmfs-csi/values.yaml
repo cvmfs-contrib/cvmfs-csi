@@ -240,6 +240,19 @@ automountDaemonStartupTimeout: 10
 # be unmounted. '0' means never unmount, '-1' leaves automount default option.
 automountDaemonUnmountTimeout: 300
 
+# Should we create a storage class for the /cvmfs automounter automatically?
+automountStorageClass:
+  create: false
+  name: cvmfs
+
+# Create repository specific storage classes
+# This should be a list of repositories and their names
+specificRepositoryStorageClasses: []
+# - name: my-repo
+#   repository: repo1.cern.ch
+# - name: my-other-repo
+#   repository: repo2.opensciencegrid.org
+
 # Chart name overrides.
 nameOverride: ""
 fullNameOverride: ""
