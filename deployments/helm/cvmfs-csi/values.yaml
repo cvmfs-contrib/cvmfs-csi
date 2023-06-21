@@ -68,7 +68,7 @@ nodeplugin:
   plugin:
     image:
       repository: registry.cern.ch/kubernetes/cvmfs-csi
-      tag: v2.2.1-rc.0
+      tag: v2.2.1
       pullPolicy: IfNotPresent
     resources: {}
 
@@ -76,7 +76,7 @@ nodeplugin:
   automount:
     image:
       repository: registry.cern.ch/kubernetes/cvmfs-csi
-      tag: v2.2.1-rc.0
+      tag: v2.2.1
       pullPolicy: IfNotPresent
     resources: {}
     # Extra volume mounts to append to nodeplugin's
@@ -92,7 +92,7 @@ nodeplugin:
   singlemount:
     image:
       repository: registry.cern.ch/kubernetes/cvmfs-csi
-      tag: v2.2.1-rc.0
+      tag: v2.2.1
       pullPolicy: IfNotPresent
     resources: {}
     # Extra volume mounts to append to nodeplugin's
@@ -168,7 +168,7 @@ controllerplugin:
   plugin:
     image:
       repository: registry.cern.ch/kubernetes/cvmfs-csi
-      tag: v2.2.1-rc.0
+      tag: v2.2.1
       pullPolicy: IfNotPresent
     resources: {}
     extraVolumeMounts: []
