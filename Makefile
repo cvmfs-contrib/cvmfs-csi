@@ -18,8 +18,9 @@
 
 BINDIR           := $(CURDIR)/bin
 DIST_DIRS        := find * -type d -exec
-TARGETS          ?= darwin/amd64 linux/amd64 linux/386 linux/arm linux/arm64 linux/ppc64le windows/amd64
-IMAGE_BUILD_TOOL ?= docker
+TARGETS          ?= linux/amd64 linux/arm64
+IMAGE_BUILD_TOOL ?= podman
+GOX_PARALLEL     ?= 3
 
 GOPATH        = $(shell go env GOPATH)
 GOX           = $(GOPATH)/bin/gox
@@ -61,14 +62,26 @@ endif
 LDFLAGS += -X ${BASE_PKG}/internal/version.commit=${GIT_COMMIT}
 LDFLAGS += -X ${BASE_PKG}/internal/version.treestate=${GIT_DIRTY}
 
+IMAGE_TAG := ${GIT_BRANCH}
+ifneq ($(GIT_TAG),)
+    IMAGE_TAG = ${GIT_TAG}
+endif
+
+ARCH := $(shell uname -m)
+ifeq ($(ARCH),x86_64)
+    LOCAL_TARGET=linux/amd64
+else ifeq ($(ARCH),arm64)
+    LOCAL_TARGET=linux/arm64
+endif
+
 .PHONY: all
 all: build
 
 # ------------------------------------------------------------------------------
 #  build
 
-.PHONY: build
-build: $(BINDIR)/csi-cvmfsplugin $(BINDIR)/automount-runner $(BINDIR)/singlemount-runner
+build: TARGETS = $(LOCAL_TARGET)
+build: build-cross
 
 $(BINDIR)/csi-cvmfsplugin: $(SRC)
 	go build $(GOFLAGS) -tags '$(TAGS)' -ldflags '$(LDFLAGS)' -o $@ ./cmd/csi-cvmfsplugin
@@ -79,39 +92,23 @@ $(BINDIR)/automount-runner: $(SRC)
 $(BINDIR)/singlemount-runner: $(SRC)
 	go build $(GOFLAGS) -tags '$(TAGS)' -ldflags '$(LDFLAGS)' -o $@ ./cmd/singlemount-runner
 
+.PHONY: build-cross
+build-cross: LDFLAGS += -extldflags "-static"
+build-cross: $(GOX) $(SRC)
+	CGO_ENABLED=0 $(GOX) -parallel=$(GOX_PARALLEL) -output="$(BINDIR)/{{.OS}}-{{.Arch}}/csi-cvmfsplugin" -osarch='$(TARGETS)' $(GOFLAGS) -tags '$(TAGS)' -ldflags '$(LDFLAGS)' ./cmd/csi-cvmfsplugin
+	CGO_ENABLED=0 $(GOX) -parallel=$(GOX_PARALLEL) -output="$(BINDIR)/{{.OS}}-{{.Arch}}/automount-runner" -osarch='$(TARGETS)' $(GOFLAGS) -tags '$(TAGS)' -ldflags '$(LDFLAGS)' ./cmd/automount-runner
+	CGO_ENABLED=0 $(GOX) -parallel=$(GOX_PARALLEL) -output="$(BINDIR)/{{.OS}}-{{.Arch}}/singlemount-runner" -osarch='$(TARGETS)' $(GOFLAGS) -tags '$(TAGS)' -ldflags '$(LDFLAGS)' ./cmd/singlemount-runner
+
 # ------------------------------------------------------------------------------
-#  test
+#  image
 
-.PHONY: test
-test: build
-test: TESTFLAGS += -race -v
-test: test-style
-test: test-unit
-
-.PHONY: test-unit
-test-unit:
-	@echo
-	@echo "==> Running unit tests <=="
-	go test $(GOFLAGS) -run $(TESTS) $(PKG) $(TESTFLAGS)
-
-.PHONY: test-coverage
-test-coverage:
-	@echo
-	@echo "==> Running unit tests with coverage <=="
-	@ ./scripts/coverage.sh
-
-.PHONY: test-style
-test-style:
-	golangci-lint run
-	@scripts/validate-license.sh
-
-.PHONY: coverage
-coverage:
-	@scripts/coverage.sh
-
-.PHONY: format
-format: $(GOIMPORTS)
-	go list -f '{{.Dir}}' ./... | xargs $(GOIMPORTS) -w
+image: build
+	$(IMAGE_BUILD_TOOL) build                                      \
+		--build-arg RELEASE=$(IMAGE_TAG)                           \
+		--build-arg GITREF=$(GIT_COMMIT)                           \
+		--build-arg CREATED=$(shell date -u +"%Y-%m-%dT%H:%M:%SZ") \
+		-t registry.cern.ch/kubernetes/cvmfs-csi:$(IMAGE_TAG)      \
+		-f ./deployments/docker/Dockerfile .
 
 # ------------------------------------------------------------------------------
 #  dependencies
@@ -119,58 +116,10 @@ format: $(GOIMPORTS)
 $(GOX):
 	go install github.com/mitchellh/gox@v1.0.1
 
-$(GOIMPORTS):
-	go install golang.org/x/tools/cmd/goimports@v0.1.12
-
-# ------------------------------------------------------------------------------
-#  release
-
-.PHONY: build-cross
-build-cross: LDFLAGS += -extldflags "-static"
-build-cross: $(GOX)
-	CGO_ENABLED=0 $(GOX) -parallel=3 -output="_dist/{{.OS}}-{{.Arch}}/csi-cvmfsplugin_{{.OS}}_{{.Arch}}" -osarch='$(TARGETS)' $(GOFLAGS) -tags '$(TAGS)' -ldflags '$(LDFLAGS)' ./cmd/csi-cvmfsplugin
-	CGO_ENABLED=0 $(GOX) -parallel=3 -output="_dist/{{.OS}}-{{.Arch}}/automount-runner_{{.OS}}_{{.Arch}}" -osarch='$(TARGETS)' $(GOFLAGS) -tags '$(TAGS)' -ldflags '$(LDFLAGS)' ./cmd/automount-runner
-	CGO_ENABLED=0 $(GOX) -parallel=3 -output="_dist/{{.OS}}-{{.Arch}}/singlemount-runner_{{.OS}}_{{.Arch}}" -osarch='$(TARGETS)' $(GOFLAGS) -tags '$(TAGS)' -ldflags '$(LDFLAGS)' ./cmd/singlemount-runner
-
-.PHONY: dist
-dist:
-	( \
-		cd _dist && \
-		$(DIST_DIRS) cp ../LICENSE {} \; && \
-		$(DIST_DIRS) cp ../README.md {} \; && \
-		$(DIST_DIRS) tar -zcf cvmfs-csi-${VERSION}-{}.tar.gz {} \; && \
-		$(DIST_DIRS) zip -r cvmfs-csi-${VERSION}-{}.zip {} \; \
-	)
-
-.PHONY: checksum
-checksum:
-	for f in _dist/*.{gz,zip} ; do \
-		shasum -a 256 "$${f}"  | awk '{print $$1}' > "$${f}.sha256" ; \
-	done
-
-.PHONY: changelog
-changelog:
-	@./scripts/changelog.sh
-
-# ------------------------------------------------------------------------------
-#  docker
-DOCKER_TAG=${GIT_BRANCH}
-ifneq ($(GIT_TAG),)
-	DOCKER_TAG = ${GIT_TAG}
-endif
-
-.PHONY: image
-image: build-cross
-	mkdir -p bin
-	cp _dist/linux-amd64/csi-cvmfsplugin_linux_amd64 bin/csi-cvmfsplugin
-	cp _dist/linux-amd64/automount-runner_linux_amd64 bin/automount-runner
-	cp _dist/linux-amd64/singlemount-runner_linux_amd64 bin/singlemount-runner
-	sudo $(IMAGE_BUILD_TOOL) build -t cvmfs-csi:${DOCKER_TAG} -f deployments/docker/Dockerfile .
-
 # ------------------------------------------------------------------------------
 .PHONY: clean
 clean:
-	@rm -rf $(BINDIR) ./_dist
+	@rm -rf $(BINDIR)
 
 .PHONY: info
 info:
