@@ -354,3 +354,21 @@ Please follow [Example: Automounting CVMFS repositories](#example-automounting-c
 When accessing a CVMFS repository you may get `Transport endpoint is not connected` error (`ENOTCONN` error code), or an empty directory. This is most likely caused by the CVMFS CSI node plugin Pod having been restarted (e.g. due to a crash, DaemonSet update, etc.), which then means losing FUSE processes that managed the CVMFS mounts, making it impossible to access them again.
 
 To fix this, restart all Pods (`kubectl delete pod ...`) on the affected node that were using CVMFS volumes.
+
+### `Input/output error` when accessing large directories
+
+When accessing a CVMFS directory with large amounts of data inside you may receive the following error (depending on how the `cvmfscatalog` has split the data):
+
+```
+ls /cvmfs/foo/bar/baz
+ls: can't open '/cvmfs/foo/bar/baz': Input/output error
+```
+
+This may mean that the local cache is running out of space. You can check that's the case by looking into the CVMFS client logs.
+
+There are two ways to resolve this:
+
+* Increase the value of [CVMFS_QUOTA_LIMIT](https://cvmfs.readthedocs.io/en/stable/cpt-configure.html#cache-settings) in the `cvmfs-csi-default-local` ConfigMap (or use the Helm value `cache.local.cvmfsQuotaLimit`).
+* Set up an [Alien cache volume](https://cvmfs.readthedocs.io/en/stable/cpt-configure.html#alien-cache) and use it with the `alien.cache` Helm chart value.
+
+You can find more details and troubleshooting steps for this issue in <https://github.com/cvmfs-contrib/cvmfs-csi/issues/89>.
