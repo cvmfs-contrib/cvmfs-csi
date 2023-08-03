@@ -234,6 +234,10 @@ kubeletDirectory: /var/lib/kubelet
 # <kubeletPluginDirectory>/plugins/<csiDriverName>/<cvmfsCSIPluginSocketFile>.
 cvmfsCSIPluginSocketFile: csi.sock
 
+# Path on the host where to mount the autofs-managed CVMFS root.
+# The directory will be created if it doesn't exist.
+automountHostPath: /var/cvmfs
+
 # Number of seconds to wait for automount daemon to start up before exiting.
 automountDaemonStartupTimeout: 10
 # Number of seconds of idle time after which an autofs-managed CVMFS mount will
