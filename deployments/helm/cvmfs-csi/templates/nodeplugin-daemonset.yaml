@@ -82,9 +82,12 @@ spec:
               readOnly: true
             - name: host-dev
               mountPath: /dev
-            - name: autofs-cvmfs
+            - name: autofs-root
               mountPath: /cvmfs
               mountPropagation: Bidirectional
+            {{- with .Values.nodeplugin.plugin.extraVolumeMounts }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
           {{- with .Values.nodeplugin.plugin.resources }}
           resources: {{ toYaml . | nindent 12 }}
           {{- end }}
@@ -113,7 +116,7 @@ spec:
               readOnly: true
             - name: host-dev
               mountPath: /dev
-            - name: autofs-cvmfs
+            - name: autofs-root
               mountPath: /cvmfs
               mountPropagation: Bidirectional
             - name: cvmfs-localcache
@@ -191,10 +194,12 @@ spec:
         - name: host-dev
           hostPath:
             path: /dev
-        - name: autofs-cvmfs
-          emptyDir: {}
         - name: runtime-metadata
           emptyDir: {}
+        - name: autofs-root
+          hostPath:
+            path: {{ .Values.automountHostPath }}
+            type: DirectoryOrCreate
         - name: cvmfs-localcache
           {{- toYaml .Values.cache.local.volumeSpec | nindent 10 }}
         {{- if .Values.cache.alien.enabled }}

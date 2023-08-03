@@ -43,6 +43,7 @@ One can specify each parameter using the `--set key=value[,key=value]` argument 
 Alternatively, a YAML file that specifies the values of the parameters can be provided when installing the chart via `-f /path/to/myvalues.yaml`.
 
 
+<<<<<<< HEAD
 | Parameter                                    | Description                                                                                                                                                         |
 |----------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `cvmfsConfig."default.local".configMapName` | Name of the ConfigMap (to use or create) for /etc/cvmfs/default.local file.                                                                                          |
@@ -102,6 +103,7 @@ Alternatively, a YAML file that specifies the values of the parameters can be pr
 | `kubeletDirectory` | Kubelet's plugin directory path.                                                                                                                                                              |
 | `cvmfsCSIPluginSocketFile` | Name of the CVMFS CSI socket file.                                                                                                                                                    |
 | `startAutomountDaemon` | Whether CVMFS CSI nodeplugin Pod should run automount daemon.                                                                                                                             |
+| `automountHostPath` | Path on the host where to mount the autofs-managed CVMFS root. The directory will be created if it doesn't exist.                                                                            |
 | `nameOverride` | Chart name override.                                                                                                                                                                              |
 | `fullNameOverride` | Chart name override.                                                                                                                                                                          |
 | `extraMetaLabels` | Extra Kubernetes object metadata labels to be added the ones generated with cvmfs-csi.common.metaLabels template.                                                                              |
