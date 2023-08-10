@@ -102,6 +102,7 @@ Alternatively, a YAML file that specifies the values of the parameters can be pr
 | `kubeletDirectory` | Kubelet's plugin directory path.                                                                                                                 |
 | `cvmfsCSIPluginSocketFile` | Name of the CVMFS CSI socket file.                                                                                                       |
 | `startAutomountDaemon` | Whether CVMFS CSI nodeplugin Pod should run automount daemon.                                                                                |
+| `automountHostPath` | Path on the host where to mount the autofs-managed CVMFS root. The directory will be created if it doesn't exist.                               |
 | `automountStorageClass.create` | Whether a CVMFS CSI storage class using the automounter should be created automatically.                                             |
 | `automountStorageClass.name` | The name for the CVMFS CSI storage class using the automounter if created.                                                             |
 | `specificRepositoryStorageClasses` | A list of specific CVMFS repos you wish to generate a `storageClass` for.                                                        |
