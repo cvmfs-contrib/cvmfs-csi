@@ -43,7 +43,6 @@ One can specify each parameter using the `--set key=value[,key=value]` argument 
 Alternatively, a YAML file that specifies the values of the parameters can be provided when installing the chart via `-f /path/to/myvalues.yaml`.
 
 
-<<<<<<< HEAD
 | Parameter                                    | Description                                                                                                                                                         |
 |----------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `cvmfsConfig."default.local".configMapName` | Name of the ConfigMap (to use or create) for /etc/cvmfs/default.local file.                                                                                          |
