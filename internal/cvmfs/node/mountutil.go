@@ -17,10 +17,10 @@
 package node
 
 import (
-	"bytes"
 	goexec "os/exec"
 
 	"github.com/cvmfs-contrib/cvmfs-csi/internal/exec"
+	"github.com/cvmfs-contrib/cvmfs-csi/internal/mountutils"
 )
 
 func bindMount(from, to string) error {
@@ -52,22 +52,8 @@ func slaveRecursiveBind(from, to string) error {
 	return err
 }
 
-func unmount(mountpoint string, extraArgs ...string) error {
-	out, err := exec.CombinedOutput(goexec.Command("umount", append(extraArgs, mountpoint)...))
-	if err != nil {
-		// There are no well-defined exit codes for cases of "not mounted"
-		// and "doesn't exist". We need to check the output.
-		if bytes.HasSuffix(out, []byte(": not mounted")) ||
-			bytes.Contains(out, []byte("No such file or directory")) {
-			return nil
-		}
-	}
-
-	return err
-}
-
 func recursiveUnmount(mountpoint string) error {
 	// We need recursive unmount because there are live mounts inside the bindmount.
 	// Unmounting only the upper autofs mount would result in EBUSY.
-	return unmount(mountpoint, "--recursive")
+	return mountutils.Unmount(mountpoint, "--recursive")
 }

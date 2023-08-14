@@ -131,6 +131,30 @@ spec:
           {{- with .Values.nodeplugin.plugin.resources }}
           resources: {{ toYaml . | nindent 12 }}
           {{- end }}
+        - name: automount-reconciler
+          image: {{ .Values.nodeplugin.automountReconciler.image.repository }}:{{ .Values.nodeplugin.automountReconciler.image.tag }}
+          command: [/automount-reconciler]
+          args:
+            - -v={{ .Values.logVerbosityLevel }}
+            - --period={{ .Values.automountReconcilePeriod }}
+          imagePullPolicy: {{ .Values.nodeplugin.automountReconciler.image.pullPolicy }}
+          securityContext:
+            privileged: true
+            capabilities:
+              add: ["SYS_ADMIN"]
+            allowPrivilegeEscalation: true
+          volumeMounts:
+            - name: autofs-root
+              mountPath: /cvmfs
+              mountPropagation: Bidirectional
+            - name: cvmfs-localcache
+              mountPath: /cvmfs-localcache
+            {{- with .Values.nodeplugin.automountReconciler.extraVolumeMounts }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          {{- with .Values.nodeplugin.automountReconciler.resources }}
+          resources: {{ toYaml . | nindent 12 }}
+          {{- end }}
         - name: singlemount
           image: {{ .Values.nodeplugin.singlemount.image.repository }}:{{ .Values.nodeplugin.singlemount.image.tag }}
           command:

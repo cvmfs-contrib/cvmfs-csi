@@ -89,6 +89,9 @@ $(BINDIR)/csi-cvmfsplugin: $(SRC)
 $(BINDIR)/automount-runner: $(SRC)
 	go build $(GOFLAGS) -tags '$(TAGS)' -ldflags '$(LDFLAGS)' -o $@ ./cmd/automount-runner
 
+$(BINDIR)/automount-reconciler: $(SRC)
+	go build $(GOFLAGS) -tags '$(TAGS)' -ldflags '$(LDFLAGS)' -o $@ ./cmd/automount-reconciler
+
 $(BINDIR)/singlemount-runner: $(SRC)
 	go build $(GOFLAGS) -tags '$(TAGS)' -ldflags '$(LDFLAGS)' -o $@ ./cmd/singlemount-runner
 
@@ -97,6 +100,7 @@ build-cross: LDFLAGS += -extldflags "-static"
 build-cross: $(GOX) $(SRC)
 	CGO_ENABLED=0 $(GOX) -parallel=$(GOX_PARALLEL) -output="$(BINDIR)/{{.OS}}-{{.Arch}}/csi-cvmfsplugin" -osarch='$(TARGETS)' $(GOFLAGS) -tags '$(TAGS)' -ldflags '$(LDFLAGS)' ./cmd/csi-cvmfsplugin
 	CGO_ENABLED=0 $(GOX) -parallel=$(GOX_PARALLEL) -output="$(BINDIR)/{{.OS}}-{{.Arch}}/automount-runner" -osarch='$(TARGETS)' $(GOFLAGS) -tags '$(TAGS)' -ldflags '$(LDFLAGS)' ./cmd/automount-runner
+	CGO_ENABLED=0 $(GOX) -parallel=$(GOX_PARALLEL) -output="$(BINDIR)/{{.OS}}-{{.Arch}}/automount-reconciler" -osarch='$(TARGETS)' $(GOFLAGS) -tags '$(TAGS)' -ldflags '$(LDFLAGS)' ./cmd/automount-reconciler
 	CGO_ENABLED=0 $(GOX) -parallel=$(GOX_PARALLEL) -output="$(BINDIR)/{{.OS}}-{{.Arch}}/singlemount-runner" -osarch='$(TARGETS)' $(GOFLAGS) -tags '$(TAGS)' -ldflags '$(LDFLAGS)' ./cmd/singlemount-runner
 
 # ------------------------------------------------------------------------------

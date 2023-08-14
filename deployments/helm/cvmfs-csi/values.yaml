@@ -88,6 +88,22 @@ nodeplugin:
     - name: etc-cvmfs-config-d
       mountPath: /etc/cvmfs/config.d
 
+  # automount-reconciler image and container resources specs.
+  automountReconciler:
+    image:
+      repository: registry.cern.ch/magnum/cvmfs-csi
+      tag: latest
+      pullPolicy: IfNotPresent
+    resources: {}
+    # Extra volume mounts to append to nodeplugin's
+    # Pod.spec.containers[name="automountReconciler"].volumeMounts.
+    extraVolumeMounts:
+    - name: etc-cvmfs-default-conf
+      mountPath: /etc/cvmfs/default.local
+      subPath: default.local
+    - name: etc-cvmfs-config-d
+      mountPath: /etc/cvmfs/config.d
+
   # automount-runner image and container resources specs.
   singlemount:
     image:
@@ -237,6 +253,9 @@ cvmfsCSIPluginSocketFile: csi.sock
 # Path on the host where to mount the autofs-managed CVMFS root.
 # The directory will be created if it doesn't exist.
 automountHostPath: /var/cvmfs
+
+# How often to check and reconcile autofs-managed CVMFS mounts.
+automountReconcilePeriod: 30s
 
 # Number of seconds to wait for automount daemon to start up before exiting.
 automountDaemonStartupTimeout: 10
