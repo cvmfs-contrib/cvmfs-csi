@@ -1,16 +1,23 @@
 FROM registry.access.redhat.com/ubi9/ubi:9.2-489
 
-RUN dnf install -y \
-      # selinux-policy is a dependency of the cvmfs package.
-      # When installing cvmfs on aarch64, an older version of selinux-policy
-      # package is selected for installation which then results in 404.
-      # As a temporary workaround we install it explicitly until this is fixed.
-      selinux-policy \
-      http://ecsft.cern.ch/dist/cvmfs/cvmfs-release/cvmfs-release-latest.noarch.rpm \
-    && dnf --setopt=install_weak_deps=False install -y cvmfs \
-    && dnf --enablerepo=* clean all && rm -rf /var/cache/yum /var/cache/dnf
-
 ARG TARGETARCH
+ARG REL_VERSION=2.11.0
+ARG PKG_VERSION=2.11.0-1
+
+RUN if [[ "${TARGETARCH}" == "amd64" ]]; then \
+    export FRIENDLY_ARCH_NAME="x86_64" ; \
+    elif [[ "${TARGETARCH}" == "arm64" ]]; then \
+    export FRIENDLY_ARCH_NAME="aarch64" ; \
+    else export FRIENDLY_ARCH_NAME="${TARGETARCH}" ; \
+    fi ; \
+    dnf install -y \
+    https://ecsft.cern.ch/dist/cvmfs/cvmfs-${REL_VERSION}/cvmfs-${PKG_VERSION}.el9.${FRIENDLY_ARCH_NAME}.rpm \
+    https://ecsft.cern.ch/dist/cvmfs/cvmfs-${REL_VERSION}/cvmfs-libs-${PKG_VERSION}.el9.${FRIENDLY_ARCH_NAME}.rpm \
+    https://ecsft.cern.ch/dist/cvmfs/cvmfs-${REL_VERSION}/cvmfs-fuse3-${PKG_VERSION}.el9.${FRIENDLY_ARCH_NAME}.rpm \
+    https://ecsft.cern.ch/dist/cvmfs/cvmfs-config/cvmfs-config-default-latest.noarch.rpm \
+    && dnf --enablerepo=* clean all \
+    && rm -rf /var/cache/yum /var/cache/dnf
+
 ARG RELEASE
 ARG GITREF
 ARG CREATED
