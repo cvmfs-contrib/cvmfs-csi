@@ -39,4 +39,5 @@ LABEL org.opencontainers.image.title="cvmfs-csi" \
 
 COPY bin/linux-${TARGETARCH}/csi-cvmfsplugin /csi-cvmfsplugin
 COPY bin/linux-${TARGETARCH}/automount-runner /automount-runner
+COPY bin/linux-${TARGETARCH}/automount-reconciler /automount-reconciler
 COPY bin/linux-${TARGETARCH}/singlemount-runner /singlemount-runner
