@@ -50,4 +50,4 @@ build-chart:
   stage: build-chart
   extends: .deploy_helm
   variables:
-    REGISTRY_PATH: registry.cern.ch/chartrepo/cern
+    REGISTRY_CHART_PATH: registry.cern.ch/kubernetes/charts
