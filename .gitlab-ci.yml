@@ -36,6 +36,7 @@ build-image:
   extends: .build_docker
   variables:
     REGISTRY_IMAGE_PATH: "registry.cern.ch/kubernetes/cvmfs-csi:$IMAGE_TAG"
+    COSIGN_PRIVATE_KEY: "$HARBOR_SIGNKEY"
     CONTEXT_DIR: "."
     DOCKER_FILE_NAME: "deployments/docker/Dockerfile"
     PLATFORMS: "linux/amd64,linux/arm64"
@@ -51,3 +52,4 @@ build-chart:
   extends: .deploy_helm
   variables:
     REGISTRY_CHART_PATH: registry.cern.ch/kubernetes/charts
+    COSIGN_PRIVATE_KEY: "$HARBOR_SIGNKEY"
