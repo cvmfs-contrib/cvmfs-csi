@@ -6,15 +6,9 @@ A Helm chart for the CVMFS-CSI driver, allowing the mounting of CVMFS repositori
 
 You can install the Helm chart from CERN repositories:
 
-Add the repository:
+Helm installation:
 ```
-helm repo add cern https://registry.cern.ch/chartrepo/cern
-helm repo update
-```
-
-Helm v3 installation:
-```
-helm install cvmfs cern/cvmfs-csi
+helm install cvmfs-csi oci://registry.cern.ch/kubernetes/charts/cvmfs-csi --version <Chart tag>
 ```
 
 ### Install from source
