@@ -85,15 +85,11 @@ spec:
               mountPropagation: Bidirectional
         - name: automount
           image: registry.cern.ch/magnum/cvmfs-csi:latest
-          command:
-            - /bin/bash
-            - -c
-            - |
-              ulimit -n 1000000
-              /automount-runner       \
-                -v=4                  \
-                --unmount-timeout=300 \
-                --has-alien-cache=false
+          command: [/automount-runner]
+          args:
+            - -v=4
+            - --unmount-timeout=300
+            - --has-alien-cache=false
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true
@@ -120,14 +116,9 @@ spec:
               name: etc-cvmfs-config-d
         - name: singlemount
           image: registry.cern.ch/magnum/cvmfs-csi:latest
-          command:
-            - /bin/bash
-            - -c
-            - |
-              ulimit -n 1000000
-              /singlemount-runner \
-                -v=4              \
-                --endpoint=unix:///var/lib/cvmfs.csi.cern.ch/singlemount-runner.sock
+          command: [/singlemount-runner]
+            - -v=4
+            - --endpoint=unix:///var/lib/cvmfs.csi.cern.ch/singlemount-runner.sock
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true
