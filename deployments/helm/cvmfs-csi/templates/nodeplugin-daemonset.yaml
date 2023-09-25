@@ -93,15 +93,11 @@ spec:
           {{- end }}
         - name: automount
           image: {{ .Values.nodeplugin.automount.image.repository }}:{{ .Values.nodeplugin.automount.image.tag }}
-          command:
-            - /bin/bash
-            - -c
-            - |
-              ulimit -n {{ .Values._rlimit_nofile }}
-              /automount-runner                                               \
-                -v={{ .Values.logVerbosityLevel }}                            \
-                --unmount-timeout={{ .Values.automountDaemonUnmountTimeout }} \
-                --has-alien-cache={{ .Values.cache.alien.enabled }}
+          command: [/automount-runner]
+          args:
+            - -v={{ .Values.logVerbosityLevel }}
+            - --unmount-timeout={{ .Values.automountDaemonUnmountTimeout }}
+            - --has-alien-cache={{ .Values.cache.alien.enabled }}
           imagePullPolicy: {{ .Values.nodeplugin.plugin.image.pullPolicy }}
           securityContext:
             privileged: true
@@ -157,14 +153,10 @@ spec:
           {{- end }}
         - name: singlemount
           image: {{ .Values.nodeplugin.singlemount.image.repository }}:{{ .Values.nodeplugin.singlemount.image.tag }}
-          command:
-            - /bin/bash
-            - -c
-            - |
-              ulimit -n {{ .Values._rlimit_nofile }}
-              /singlemount-runner                                             \
-                -v={{ .Values.logVerbosityLevel }}                            \
-                --endpoint=unix:///var/lib/cvmfs.csi.cern.ch/singlemount-runner.sock
+          command: [/singlemount-runner]
+          args:
+            - -v={{ .Values.logVerbosityLevel }}
+            - --endpoint=unix:///var/lib/cvmfs.csi.cern.ch/singlemount-runner.sock
           imagePullPolicy: {{ .Values.nodeplugin.singlemount.image.pullPolicy }}
           securityContext:
             privileged: true
