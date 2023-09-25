@@ -23,6 +23,7 @@ import (
 	"os"
 	goexec "os/exec"
 	"os/signal"
+	"path"
 	"syscall"
 
 	"github.com/cvmfs-contrib/cvmfs-csi/internal/exec"
@@ -32,6 +33,7 @@ import (
 const (
 	AutofsCvmfsRoot = "/cvmfs"
 	AlienCachePath  = "/cvmfs-aliencache"
+	LocalCachePath  = "/cvmfs-localcache"
 )
 
 type Opts struct {
@@ -54,6 +56,100 @@ func cvmfsVersion() (string, error) {
 	return string(bytes.TrimSpace(out)), nil
 }
 
+func removeDirContents(dirName string) error {
+	contents, err := os.ReadDir(dirName)
+	if err != nil {
+		// Ignore ENOENT.
+		if os.IsNotExist(err) {
+			return nil
+		}
+
+		return err
+	}
+
+	for i := range contents {
+		if err = os.RemoveAll(path.Join(dirName, contents[i].Name())); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func readEffectiveDefaultCvmfsConfig() (map[string]string, error) {
+	out, err := exec.Output(goexec.Command(
+		"cvmfs_config",
+		"showconfig",
+		// Show only non-empty config parameters.
+		"-s",
+		// Repository name. We use "x" as a dummy value,
+		// as we don't care at this point, and need only
+		// the default, not repository-specific values.
+		"x",
+	))
+
+	if err != nil {
+		execErr, ok := err.(*goexec.ExitError)
+		if !ok {
+			return nil, err
+		}
+
+		// The command normally exits with code 1, because
+		// the repository "x" does not exist. The output is
+		// still valid.
+		if execErr.ExitCode() != 1 {
+			return nil, err
+		}
+	}
+
+	var (
+		buf    = bytes.NewBuffer(out)
+		sc     = bufio.NewScanner(buf)
+		config = make(map[string]string)
+	)
+
+	for sc.Scan() {
+		// Each line is expected to be in the following format:
+		//
+		//   <Key>=<Value>
+		//
+		//  when there is no comment, or
+		//
+		//   <Key>=<Value>    # from <Source filepath>
+		//
+		//  when there is a comment.
+		line := sc.Bytes()
+
+		// Find the equal sign '=' where the Key is separated from the Value.
+
+		eqTok := bytes.IndexByte(line, '=')
+		if eqTok == -1 {
+			log.Debugf("Read unexpected CVMFS config parameter \"%s\", missing '='", line)
+			continue
+		}
+
+		// Cut the comment from the Value, if any.
+
+		valEndIdx := len(line)
+		const commentPrefix = "    #"
+
+		if commentTok := bytes.LastIndexByte(line, '#'); commentTok != -1 {
+			if bytes.HasSuffix(line[:commentTok+1], []byte(commentPrefix)) {
+				valEndIdx = commentTok - len(commentPrefix) + 1
+			}
+		}
+
+		// Add to the map.
+
+		key := string(line[:eqTok])
+		value := string(line[eqTok+1 : valEndIdx])
+
+		config[key] = value
+	}
+
+	return config, nil
+}
+
 func setupCvmfs(o *Opts) error {
 	if o.HasAlienCache {
 		// Make sure the volume is writable by CVMFS processes.
@@ -62,7 +158,28 @@ func setupCvmfs(o *Opts) error {
 		}
 	}
 
+	// Clean up local cache. It may be dirty after previous nodeplugin Pod runs.
+
+	log.Debugf("Cleaning up local cache directory %s...", LocalCachePath)
+
+	cvmfsConfig, err := readEffectiveDefaultCvmfsConfig()
+	if err != nil {
+		return fmt.Errorf("failed to read CVMFS config: %v", err)
+	}
+
+	cacheDir := cvmfsConfig["CVMFS_CACHE_BASE"]
+	if cacheDir == "" {
+		cacheDir = LocalCachePath
+	}
+
+	if err := removeDirContents(cacheDir); err != nil {
+		return fmt.Errorf("failed to clean up local cache directory %s: %v", cacheDir, err)
+	}
+
+	log.Debugf("Finished cleaning up local cache directory %s", cacheDir)
+
 	// Set up configuration required for autofs with CVMFS to work properly.
+
 	if _, err := exec.CombinedOutput(goexec.Command("cvmfs_config", "setup", "nocfgmod", "nostart", "noautofs")); err != nil {
 		return fmt.Errorf("failed to setup CVMFS config: %v", err)
 	}

@@ -36,7 +36,9 @@ extraConfigMaps:
 cache:
   local:
     volumeSpec:
-      emptyDir: {}
+      hostPath:
+        path: /var/lib/cvmfs.csi.cern.ch/cache
+        type: DirectoryOrCreate
     # Maximum size of local cache in MiB.
     # CVMFS client will garbage collect the exceeding amount.
     cvmfsQuotaLimit: 1000

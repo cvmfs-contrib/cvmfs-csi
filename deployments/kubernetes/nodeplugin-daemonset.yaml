@@ -171,7 +171,9 @@ spec:
         - name: runtime-metadata
           emptyDir: {}
         - name: cvmfs-localcache
-          emptyDir: {}
+          hostPath:
+            path: /var/lib/cvmfs.csi.cern.ch/cache
+            type: DirectoryOrCreate
         - configMap:
             name: cvmfs-csi-default-local
           name: etc-cvmfs-default-conf
