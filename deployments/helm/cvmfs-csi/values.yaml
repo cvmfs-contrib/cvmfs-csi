@@ -283,9 +283,3 @@ fullNameOverride: ""
 # Extra Kubernetes object metadata labels to be added the ones generated
 # with cvmfs-csi.common.metaLabels template.
 extraMetaLabels: {}
-
-# Temporary workaround for CVMFS client hangs when rlimit_nofile is too high.
-# See https://github.com/cvmfs-contrib/cvmfs-csi/issues/57 for details.
-# NOTE: this value will be deprecated once the issue is fixed.
-# Empty value "" disables the workaround.
-_rlimit_nofile: "1000000"
