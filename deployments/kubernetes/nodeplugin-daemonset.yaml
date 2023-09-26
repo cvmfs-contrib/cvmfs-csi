@@ -39,7 +39,7 @@ spec:
             - name: registration-dir
               mountPath: /registration
         - name: nodeplugin
-          image: registry.cern.ch/kubernetes/cvmfs-csi:v2.3.0-rc.0
+          image: registry.cern.ch/kubernetes/cvmfs-csi:v2.3.0
           command: [/csi-cvmfsplugin]
           args:
             - -v=4
@@ -84,7 +84,7 @@ spec:
               mountPath: /cvmfs
               mountPropagation: Bidirectional
         - name: automount
-          image: registry.cern.ch/kubernetes/cvmfs-csi:v2.3.0-rc.0
+          image: registry.cern.ch/kubernetes/cvmfs-csi:v2.3.0
           command: [/automount-runner]
           args:
             - -v=4
@@ -115,7 +115,7 @@ spec:
             - mountPath: /etc/cvmfs/config.d
               name: etc-cvmfs-config-d
         - name: singlemount
-          image: registry.cern.ch/kubernetes/cvmfs-csi:v2.3.0-rc.0
+          image: registry.cern.ch/kubernetes/cvmfs-csi:v2.3.0
           command: [/singlemount-runner]
             - -v=4
             - --endpoint=unix:///var/lib/cvmfs.csi.cern.ch/singlemount-runner.sock
