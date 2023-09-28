@@ -24,8 +24,10 @@ import (
 	goexec "os/exec"
 	"os/signal"
 	"path"
+	"sync/atomic"
 	"syscall"
 
+	"github.com/cvmfs-contrib/cvmfs-csi/internal/cvmfs/env"
 	"github.com/cvmfs-contrib/cvmfs-csi/internal/exec"
 	"github.com/cvmfs-contrib/cvmfs-csi/internal/log"
 )
@@ -245,6 +247,19 @@ func RunBlocking() error {
 
 	if log.LevelEnabled(log.LevelDebug) {
 		args = append(args, "--verbose")
+
+		// Log info about autofs mount in /cvmfs.
+
+		isAutofs, err := IsAutofs("/cvmfs")
+		if err != nil {
+			log.Fatalf("Failed to stat /cvmfs: %v", err)
+		}
+
+		if isAutofs {
+			log.Debugf("autofs already mounted in /cvmfs, automount daemon will reconnect...")
+		} else {
+			log.Debugf("autofs not mounted in /cvmfs, automount daemon will mount it now...")
+		}
 	}
 
 	if log.LevelEnabled(log.LevelTrace) {
@@ -276,20 +291,62 @@ func RunBlocking() error {
 
 	// Catch SIGTERM and SIGKILL and forward it to the automount process.
 
-	sigCh := make(chan os.Signal, 1)
+	autofsTryCleanAtExit := env.GetAutofsTryCleanAtExit()
+
+	sigCh := make(chan os.Signal, 2)
 	defer close(sigCh)
+
+	var exitedWithSigTerm atomic.Bool
 
 	go func() {
 		for {
-			if sig, more := <-sigCh; more {
-				cmd.Process.Signal(sig)
-			} else {
+			sig, more := <-sigCh
+			if !more {
 				break
 			}
+
+			if !autofsTryCleanAtExit && sig == syscall.SIGTERM {
+				// automount daemon unmounts the autofs root in /cvmfs upon
+				// receiving SIGTERM. This makes it impossible to reconnect
+				// the daemon to the mount later, so all consumer Pods will
+				// loose their mounts CVMFS, without the possibility of restoring
+				// them (unless these Pods are restarted too). The implication
+				// is that the nodeplugin is just being restarted, and will be
+				// needed again.
+				//
+				// SIGKILL is handled differently in automount, as this forces
+				// the daemon to skip the cleanup at exit, leaving the autofs
+				// mount behind and making it possible to reconnect to it later.
+				// We make a use of this, and unless the admin doesn't explicitly
+				// ask for cleanup with AUTOFS_TRY_CLEAN_AT_EXIT env var, no cleanup
+				// is done.
+				//
+				// Also, we intentionally don't unmount the existing autofs-managed
+				// mounts inside /cvmfs, so that any existing consumers receive ENOTCONN
+				// (due to broken FUSE mounts), so that accidental `mkdir -p` won't
+				// succeed. They are cleaned by the daemon on startup.
+				//
+				// TODO: remove this once the automount daemon supports skipping
+				//       cleanup (via a command line flag).
+
+				log.Debugf("Sending SIGKILL to automount daemon")
+
+				exitedWithSigTerm.Store(true)
+				cmd.Process.Signal(syscall.SIGKILL)
+				break
+			}
+
+			cmd.Process.Signal(sig)
 		}
 	}()
 
-	signal.Notify(sigCh, syscall.SIGTERM, syscall.SIGKILL)
+	shutdownSignals := []os.Signal{
+		syscall.SIGINT,
+		syscall.SIGTERM,
+		syscall.SIGKILL,
+	}
+
+	signal.Notify(sigCh, shutdownSignals...)
 
 	// Start automount daemon.
 
@@ -303,7 +360,7 @@ func RunBlocking() error {
 
 	cmd.Wait()
 
-	if cmd.ProcessState.ExitCode() != 0 {
+	if !exitedWithSigTerm.Load() && cmd.ProcessState.ExitCode() != 0 {
 		log.Fatalf(fmt.Sprintf("automount[%d] has exited unexpectedly: %s", cmd.Process.Pid, cmd.ProcessState))
 	}
 

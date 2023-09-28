@@ -22,6 +22,7 @@ import (
 	"os"
 
 	"github.com/cvmfs-contrib/cvmfs-csi/internal/cvmfs/automount"
+	"github.com/cvmfs-contrib/cvmfs-csi/internal/cvmfs/env"
 	"github.com/cvmfs-contrib/cvmfs-csi/internal/log"
 	cvmfsversion "github.com/cvmfs-contrib/cvmfs-csi/internal/version"
 
@@ -54,6 +55,7 @@ func main() {
 
 	log.Infof("automount-runner for CVMFS CSI plugin version %s", cvmfsversion.FullVersion())
 	log.Infof("Command line arguments %v", os.Args)
+	log.Infof("Environment variables %s", env.StringAutofsTryCleanAtExit())
 
 	err := automount.Init(&automount.Opts{
 		UnmountTimeoutSeconds: *unmountTimeoutSeconds,
