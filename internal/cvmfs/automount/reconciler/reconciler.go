@@ -19,11 +19,9 @@ package mountreconcile
 import (
 	"bytes"
 	"fmt"
-	"os"
 	goexec "os/exec"
 	"path"
 	"strings"
-	"syscall"
 	"time"
 
 	"github.com/cvmfs-contrib/cvmfs-csi/internal/exec"
@@ -42,13 +40,29 @@ type Opts struct {
 func RunBlocking(o *Opts) error {
 	t := time.NewTicker(o.Period)
 
+	doReconcile := func() {
+		log.Tracef("Reconciling /cvmfs")
+		if err := reconcile(); err != nil {
+			log.Errorf("Failed to reconcile /cvmfs: %v", err)
+		}
+	}
+
+	// Run at start so that broken mounts after nodeplugin Pod
+	// restart are cleaned up.
+	//
+	// Known issue with CVMFS v2.11.0: first run of cvmfs_talk
+	// on corrupted mounts sometimes results in the program exiting
+	// due to SIGABRT, as a result of a failed assertion:
+	//   (num_bytes >= 0)
+	//     && (static_cast<size_t>(num_bytes) == nbyte)
+	// This does not trigger reconciliation. On the second retry,
+	// the command runs normally and the mount is cleaned.
+	doReconcile()
+
 	for {
 		select {
 		case <-t.C:
-			log.Tracef("Reconciling /cvmfs")
-			if err := reconcile(); err != nil {
-				log.Errorf("Failed to reconcile /cvmfs: %v", err)
-			}
+			doReconcile()
 		}
 	}
 }
@@ -108,28 +122,14 @@ func repoNeedsUnmount(repo string) (bool, error) {
 	const cvmfsErrConnRefused = "(111 - Connection refused)\x0A"
 	const cvmfsErrClientNotRunning = "Seems like CernVM-FS is not running"
 
-	if bytes.HasSuffix(out, []byte(cvmfsErrConnRefused)) ||
-		bytes.HasPrefix(out, []byte(cvmfsErrClientNotRunning)) {
-		// It seems that the CVMFS client exited.
-		// Use stat syscall to check for ENOTCONN, i.e. the mount is corrupted,
-		// confirming what cvmfs_talk returned.
+	outputHasKnownErr := bytes.HasSuffix(out, []byte(cvmfsErrConnRefused)) ||
+		bytes.HasPrefix(out, []byte(cvmfsErrClientNotRunning))
 
-		_, err := os.Stat(path.Join(mountPathPrefix, repo))
-		if err != nil {
-			if err.(*os.PathError).Err == syscall.ENOTCONN {
-				return true, nil
-			}
-
-			// It's something else.
-			return false, fmt.Errorf("unexpected error from stat: %v", err)
-		}
-
-		// stat should have failed! Fall through and fail.
+	if !outputHasKnownErr {
+		return false, fmt.Errorf("failed to talk to CVMFS client (%v): %s", err, out)
 	}
 
-	// If we got here, the error reported by cvmfs_talk
-	// is something else and we should fail too.
-	return false, fmt.Errorf("failed to talk to CVMFS client (%v): %s", err, out)
+	return true, nil
 }
 
 func reconcile() error {
