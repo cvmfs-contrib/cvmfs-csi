@@ -41,7 +41,7 @@ const (
 	//       bind.json
 	//       config
 	//       mount.json
-	singlemountsDir = "/var/lib/cvmfs.csi.cern.ch/single"
+	SinglemountsDir = "/var/lib/cvmfs.csi.cern.ch/single"
 
 	// Contains mapping between all mountpoint -> mount ID that are currently
 	// in use. We need to keep track of these, because CSI's NodeUnstageVolume
@@ -80,7 +80,7 @@ type (
 )
 
 func fmtMountSingleBasePath(mountID string) string {
-	return path.Join(singlemountsDir, mountID)
+	return path.Join(SinglemountsDir, mountID)
 }
 
 func fmtMountpointPath(mountID string) string {
@@ -100,13 +100,14 @@ func fmtConfigPath(mountID string) string {
 }
 
 func fmtMountpointsMetadataPath() string {
-	return path.Join(singlemountsDir, mountpointsFilename)
+	return path.Join(SinglemountsDir, mountpointsFilename)
 }
 
-func init() {
-	if err := os.MkdirAll(singlemountsDir, 0775); err != nil {
-		panic(err)
-	}
+// Creates the metadata directory for singlemount-runner.
+// Must be called before RunBlocking().
+// TOOD: make the path configurable and expose via the chart.
+func CreateSingleMountsDir() error {
+	return os.MkdirAll(SinglemountsDir, 0775)
 }
 
 // Makes sure that directory <mountsDir>/<MountSingleRequest.MountId> exists.
