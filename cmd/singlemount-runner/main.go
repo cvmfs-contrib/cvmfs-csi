@@ -47,17 +47,21 @@ func main() {
 		os.Exit(0)
 	}
 
-	// Initialize and run automount-runner.
+	// Initialize and run singlemount-runner.
 
 	log.Infof("singlemount-runner for CVMFS CSI plugin version %s", cvmfsversion.FullVersion())
 	log.Infof("Command line arguments %v", os.Args)
+
+	if err := singlemount.CreateSingleMountsDir(); err != nil {
+		log.Fatalf("Failed to create metadata directory in %s: %v", singlemount.SinglemountsDir, err)
+	}
 
 	opts := singlemount.Opts{
 		Endpoint: *endpoint,
 	}
 
 	if err := singlemount.RunBlocking(opts); err != nil {
-		log.Fatalf("Failed to run automount-runner: %v", err)
+		log.Fatalf("Failed to run singlemount-runner: %v", err)
 	}
 
 	os.Exit(0)
