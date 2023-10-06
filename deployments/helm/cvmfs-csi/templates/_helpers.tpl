@@ -124,7 +124,7 @@ component: controllerplugin
 
 {{- define "cvmfs-csi.nodeplugin.labels" -}}
 {{- if .Values.nodeplugin.labelsOverride -}}
-{{ .Values.nodeplugin.labelsOverride }}
+{{ toYaml .Values.nodeplugin.labelsOverride }}
 {{- else -}}
 {{ include "cvmfs-csi.common.metaLabels" . }}
 component: nodeplugin
@@ -134,7 +134,7 @@ release: {{ .Release.Name }}
 
 {{- define "cvmfs-csi.controllerplugin.labels" -}}
 {{- if .Values.controllerplugin.labelsOverride -}}
-{{ .Values.controllerplugin.labelsOverride }}
+{{ toYaml .Values.controllerplugin.labelsOverride }}
 {{- else -}}
 {{ include "cvmfs-csi.common.metaLabels" . }}
 component: controllerplugin
