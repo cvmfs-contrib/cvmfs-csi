@@ -69,16 +69,16 @@ nodeplugin:
   # CVMFS CSI image and container resources specs.
   plugin:
     image:
-      repository: registry.cern.ch/kubernetes/charts/cvmfs-csi
-      tag: 2.3.2
+      repository: registry.cern.ch/kubernetes/cvmfs-csi
+      tag: v2.3.2
       pullPolicy: IfNotPresent
     resources: {}
 
   # automount-runner image and container resources specs.
   automount:
     image:
-      repository: registry.cern.ch/kubernetes/charts/cvmfs-csi
-      tag: 2.3.2
+      repository: registry.cern.ch/kubernetes/cvmfs-csi
+      tag: v2.3.2
       pullPolicy: IfNotPresent
     resources: {}
     # Extra volume mounts to append to nodeplugin's
@@ -93,8 +93,8 @@ nodeplugin:
   # automount-reconciler image and container resources specs.
   automountReconciler:
     image:
-      repository: registry.cern.ch/kubernetes/charts/cvmfs-csi
-      tag: 2.3.2
+      repository: registry.cern.ch/kubernetes/cvmfs-csi
+      tag: v2.3.2
       pullPolicy: IfNotPresent
     resources: {}
     # Extra volume mounts to append to nodeplugin's
@@ -109,8 +109,8 @@ nodeplugin:
   # automount-runner image and container resources specs.
   singlemount:
     image:
-      repository: registry.cern.ch/kubernetes/charts/cvmfs-csi
-      tag: 2.3.2
+      repository: registry.cern.ch/kubernetes/cvmfs-csi
+      tag: v2.3.2
       pullPolicy: IfNotPresent
     resources: {}
     # Extra volume mounts to append to nodeplugin's
@@ -185,8 +185,8 @@ controllerplugin:
   # CVMFS CSI image and container resources specs.
   plugin:
     image:
-      repository: registry.cern.ch/kubernetes/charts/cvmfs-csi
-      tag: 2.3.2
+      repository: registry.cern.ch/kubernetes/cvmfs-csi
+      tag: v2.3.2
       pullPolicy: IfNotPresent
     resources: {}
     extraVolumeMounts: []
