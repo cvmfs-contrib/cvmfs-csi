@@ -44,9 +44,7 @@ const (
 	cvmfsRoot = "/cvmfs"
 )
 
-var (
-	_ csi.NodeServer = (*Server)(nil)
-)
+var _ csi.NodeServer = (*Server)(nil)
 
 func New(nodeID, singlemountRunnerEndpoint string) *Server {
 	enabledCaps := []csi.NodeServiceCapability_RPC_Type{
@@ -104,7 +102,7 @@ func (srv *Server) NodePublishVolume(
 			"failed to parse volume context: %v", err)
 	}
 
-	if err := os.MkdirAll(targetPath, 0700); err != nil {
+	if err := os.MkdirAll(targetPath, 0o700); err != nil {
 		return nil, status.Errorf(codes.Internal,
 			"failed to create mountpoint directory at %s: %v", targetPath, err)
 	}

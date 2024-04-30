@@ -85,9 +85,7 @@ const (
 	maxDriverNameLength = 63
 )
 
-var (
-	errTimeout = errors.New("timed out waiting for condition")
-)
+var errTimeout = errors.New("timed out waiting for condition")
 
 func (o *Opts) validate() error {
 	required := func(name, value string) error {

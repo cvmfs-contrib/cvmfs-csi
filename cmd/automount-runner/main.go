@@ -61,7 +61,6 @@ func main() {
 		UnmountTimeoutSeconds: *unmountTimeoutSeconds,
 		HasAlienCache:         *hasAlienCache,
 	})
-
 	if err != nil {
 		log.Fatalf("Failed to initialize automount-runner: %v", err)
 	}

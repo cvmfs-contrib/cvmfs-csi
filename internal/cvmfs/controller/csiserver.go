@@ -31,9 +31,7 @@ type Server struct {
 	caps []*csi.ControllerServiceCapability
 }
 
-var (
-	_ csi.ControllerServer = (*Server)(nil)
-)
+var _ csi.ControllerServer = (*Server)(nil)
 
 func New() *Server {
 	enabledCaps := []csi.ControllerServiceCapability_RPC_Type{

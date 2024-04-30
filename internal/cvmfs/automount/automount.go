@@ -89,7 +89,6 @@ func readEffectiveDefaultCvmfsConfig() (map[string]string, error) {
 		// the default, not repository-specific values.
 		"x",
 	))
-
 	if err != nil {
 		execErr, ok := err.(*goexec.ExitError)
 		if !ok {
@@ -155,7 +154,7 @@ func readEffectiveDefaultCvmfsConfig() (map[string]string, error) {
 func setupCvmfs(o *Opts) error {
 	if o.HasAlienCache {
 		// Make sure the volume is writable by CVMFS processes.
-		if err := os.Chmod(AlienCachePath, 0777); err != nil {
+		if err := os.Chmod(AlienCachePath, 0o777); err != nil {
 			return err
 		}
 	}
@@ -191,7 +190,7 @@ func setupCvmfs(o *Opts) error {
 
 func setupAutofs(o *Opts) error {
 	writeFmtFile := func(filepath, format string, fmtValues ...any) error {
-		if err := os.WriteFile(filepath, []byte(fmt.Sprintf(format, fmtValues...)), 0644); err != nil {
+		if err := os.WriteFile(filepath, []byte(fmt.Sprintf(format, fmtValues...)), 0o644); err != nil {
 			return fmt.Errorf("failed to write autofs configuration to %s: %v", filepath, err)
 		}
 		return nil
