@@ -182,6 +182,13 @@ func (srv *Server) ControllerGetVolume(
 	return nil, status.Error(codes.Unimplemented, "")
 }
 
+func (srv *Server) ControllerModifyVolume(
+	context.Context,
+	*csi.ControllerModifyVolumeRequest,
+) (*csi.ControllerModifyVolumeResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "")
+}
+
 func validateCreateVolumeRequest(req *csi.CreateVolumeRequest) error {
 	if req.GetName() == "" {
 		return errors.New("volume name cannot be empty")
