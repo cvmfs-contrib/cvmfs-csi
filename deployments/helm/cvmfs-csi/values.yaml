@@ -133,6 +133,11 @@ nodeplugin:
     # too in order to refresh the mounts.
     type: OnDelete
 
+  # podSecurityContext for nodeplugin daemonset.
+  podSecurityContext:
+    seccompProfile:
+      type: RuntimeDefault
+
   # Pod priority class name.
   priorityClassName: system-node-critical
 
@@ -202,6 +207,11 @@ controllerplugin:
   # Deployment update strategy.
   deploymentStrategySpec:
     type: RollingUpdate
+
+  # Pod SecurityContext for controllerplugin deployment and daemonset.
+  podSecurityContext:
+    seccompProfile:
+      type: RuntimeDefault
 
   # Pod priority class name.
   priorityClassName: ""
