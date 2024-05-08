@@ -73,11 +73,13 @@ Alternatively, a YAML file that specifies the values of the parameters can be pr
 | `nodeplugin.registrar.image.pullPolicy` | Pull policy for csi-node-driver-registrar image.                                                                            |
 | `nodeplugin.registrar.image.resources` | Resource constraints for the `registrar` container.                                                                          |
 | `nodeplugin.updateStrategySpec` | DaemonSet update strategy.                                                                                                          |
+| `nodeplugin.podSecurityContext` | Pod-level security context for nodeplugin DaemonSet.                                                                                |
 | `nodeplugin.priorityClassName` | Pod priority class name of the nodeplugin DaemonSet.                                                                                 |
 | `nodeplugin.nodeSelector` | Pod node selector of the nodeplugin DaemonSet.                                                                                            |
 | `nodeplugin.tolerations` | Pod tolerations of the nodeplugin DaemonSet.                                                                                               |
 | `nodeplugin.affinity` | Pod node affinity of the nodeplugin DaemonSet.                                                                                                |
 | `controllerplugin.name` | Component name for controller plugin component. Used as `component` label value and to generate Deployment name.                            |
+| `controllerplugin.podSecurityContext` | Pod-level security context for controllerplugin deployment.                                                                   |
 | `controllerplugin.plugin.image.repository` | Container image repository for CVMFS CSI controller plugin.                                                              |
 | `controllerplugin.plugin.image.tag` | Container image tag for CVMFS CSI controller plugin.                                                                            |
 | `controllerplugin.plugin.image.pullPolicy` | Pull policy for CVMFS CSI controller plugin image.                                                                       |
