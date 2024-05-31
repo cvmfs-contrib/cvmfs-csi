@@ -15,7 +15,7 @@ build-bin:
   stage: build-bin
   rules:
   - if: $CI_COMMIT_BRANCH || $CI_COMMIT_TAG
-  image: registry.cern.ch/docker.io/library/golang:1.20
+  image: registry.cern.ch/docker.io/library/golang:1.22
   artifacts:
     expire_in: '10 min'
     paths:

@@ -49,7 +49,6 @@ func NewClient(ctx context.Context, endpoint string) (*Client, error) {
 		}),
 		grpc.WithBlock(),
 	)
-
 	if err != nil {
 		return nil, err
 	}

@@ -35,13 +35,11 @@ func (rf rolesFlag) String() string {
 	return fmt.Sprintf("%v", []driver.ServiceRole(rf))
 }
 
-var (
-	knownServiceRoles = map[driver.ServiceRole]struct{}{
-		driver.IdentityServiceRole:   {},
-		driver.NodeServiceRole:       {},
-		driver.ControllerServiceRole: {},
-	}
-)
+var knownServiceRoles = map[driver.ServiceRole]struct{}{
+	driver.IdentityServiceRole:   {},
+	driver.NodeServiceRole:       {},
+	driver.ControllerServiceRole: {},
+}
 
 func (rf *rolesFlag) Set(newRoleFlag string) error {
 	for _, part := range strings.Split(newRoleFlag, ",") {
@@ -105,7 +103,6 @@ func main() {
 
 		AutomountDaemonStartupTimeoutSeconds: *automountDaemonStartupTimeoutSeconds,
 	})
-
 	if err != nil {
 		log.Fatalf("Failed to initialize the driver: %v", err)
 	}

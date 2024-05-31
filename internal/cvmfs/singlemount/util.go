@@ -51,5 +51,5 @@ func toJSONFile(filepath string, val any) error {
 		return err
 	}
 
-	return os.WriteFile(filepath, jsonData, 0644)
+	return os.WriteFile(filepath, jsonData, 0o644)
 }

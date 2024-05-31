@@ -107,7 +107,7 @@ func fmtMountpointsMetadataPath() string {
 // Must be called before RunBlocking().
 // TOOD: make the path configurable and expose via the chart.
 func CreateSingleMountsDir() error {
-	return os.MkdirAll(SinglemountsDir, 0775)
+	return os.MkdirAll(SinglemountsDir, 0o775)
 }
 
 // Makes sure that directory <mountsDir>/<MountSingleRequest.MountId> exists.
@@ -127,7 +127,7 @@ func ensureMountSingleMetadata(req *pb.MountSingleRequest) (bool, error) {
 }
 
 func writeConfigFile(mountID, config string) error {
-	f, err := os.OpenFile(fmtConfigPath(mountID), os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0444)
+	f, err := os.OpenFile(fmtConfigPath(mountID), os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0o444)
 	if err != nil {
 		return err
 	}
@@ -154,7 +154,7 @@ func createMountSingleMetadata(req *pb.MountSingleRequest) error {
 	// Create the root singlemount directory.
 
 	entryDir := fmtMountSingleBasePath(req.MountId)
-	if err := os.Mkdir(entryDir, 0775); err != nil {
+	if err := os.Mkdir(entryDir, 0o775); err != nil {
 		return err
 	}
 
@@ -166,7 +166,7 @@ func createMountSingleMetadata(req *pb.MountSingleRequest) error {
 		return err
 	}
 
-	err = os.WriteFile(path.Join(entryDir, mountMetadataFilename), mountMetaJSON, 0444)
+	err = os.WriteFile(path.Join(entryDir, mountMetadataFilename), mountMetaJSON, 0o444)
 	if err != nil {
 		return err
 	}
@@ -194,7 +194,7 @@ func createMountSingleMetadata(req *pb.MountSingleRequest) error {
 
 	// Create mountpoint directory.
 
-	if err = os.Mkdir(path.Join(entryDir, mountpointDirname), 0777); err != nil {
+	if err = os.Mkdir(path.Join(entryDir, mountpointDirname), 0o777); err != nil {
 		return err
 	}
 
@@ -435,13 +435,11 @@ func (mu bindMounterUnmounter) mount(mountpoint string) error {
 		mu.cvmfsMountpoint,
 		mountpoint,
 	))
-
 	if err != nil {
 		log.Errorf("failed to bind %s to %s: output: %s; error: %v", mu.cvmfsMountpoint, mountpoint, out, err)
 	}
 
 	return err
-
 }
 
 func (mu bindMounterUnmounter) unmount(mountpoint string) error {
@@ -459,7 +457,6 @@ func (mu bindMounterUnmounter) unmount(mountpoint string) error {
 	}
 
 	return err
-
 }
 
 func addMountpointMetadata(mountpoint, mountID string) error {

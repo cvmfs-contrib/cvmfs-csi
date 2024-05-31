@@ -31,9 +31,7 @@ const (
 	StCorrupted
 )
 
-var (
-	dummyMounter = mount.New("")
-)
+var dummyMounter = mount.New("")
 
 func (s State) String() string {
 	return [...]string{

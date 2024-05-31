@@ -31,9 +31,7 @@ type Server struct {
 	caps []*csi.ControllerServiceCapability
 }
 
-var (
-	_ csi.ControllerServer = (*Server)(nil)
-)
+var _ csi.ControllerServer = (*Server)(nil)
 
 func New() *Server {
 	enabledCaps := []csi.ControllerServiceCapability_RPC_Type{
@@ -181,6 +179,13 @@ func (srv *Server) ControllerGetVolume(
 	context.Context,
 	*csi.ControllerGetVolumeRequest,
 ) (*csi.ControllerGetVolumeResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "")
+}
+
+func (srv *Server) ControllerModifyVolume(
+	context.Context,
+	*csi.ControllerModifyVolumeRequest,
+) (*csi.ControllerModifyVolumeResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "")
 }
 
