@@ -127,7 +127,7 @@ spec:
             {{- with .Values.nodeplugin.automount.extraVolumeMounts }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
-          {{- with .Values.nodeplugin.plugin.resources }}
+          {{- with .Values.nodeplugin.automount.resources }}
           resources: {{ toYaml . | nindent 12 }}
           {{- end }}
         - name: automount-reconciler
