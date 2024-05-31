@@ -16,6 +16,9 @@ spec:
     spec:
       # hostPID is required for autofs to work.
       hostPID: {{ .Values.nodeplugin.hostPID }}
+      {{- with .Values.nodeplugin.podSecurityContext }}
+      securityContext: {{ toYaml . | nindent 8 }}
+      {{- end }}
       {{- if .Values.nodeplugin.serviceAccount.use }}
       serviceAccount: {{ include "cvmfs-csi.serviceAccountName.nodeplugin" . }}
       {{- end }}

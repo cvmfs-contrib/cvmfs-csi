@@ -59,12 +59,12 @@ nodeplugin:
 
   # Extra volumes to be appended to nodeplugin's Pod.spec.volumes.
   extraVolumes:
-  - name: etc-cvmfs-default-conf
-    configMap:
-      name: cvmfs-csi-default-local
-  - name: etc-cvmfs-config-d
-    configMap:
-      name: cvmfs-csi-config-d
+    - name: etc-cvmfs-default-conf
+      configMap:
+        name: cvmfs-csi-default-local
+    - name: etc-cvmfs-config-d
+      configMap:
+        name: cvmfs-csi-config-d
 
   # CVMFS CSI image and container resources specs.
   plugin:
@@ -84,11 +84,11 @@ nodeplugin:
     # Extra volume mounts to append to nodeplugin's
     # Pod.spec.containers[name="nodeplugin"].volumeMounts.
     extraVolumeMounts:
-    - name: etc-cvmfs-default-conf
-      mountPath: /etc/cvmfs/default.local
-      subPath: default.local
-    - name: etc-cvmfs-config-d
-      mountPath: /etc/cvmfs/config.d
+      - name: etc-cvmfs-default-conf
+        mountPath: /etc/cvmfs/default.local
+        subPath: default.local
+      - name: etc-cvmfs-config-d
+        mountPath: /etc/cvmfs/config.d
 
   # automount-reconciler image and container resources specs.
   automountReconciler:
@@ -100,11 +100,11 @@ nodeplugin:
     # Extra volume mounts to append to nodeplugin's
     # Pod.spec.containers[name="automountReconciler"].volumeMounts.
     extraVolumeMounts:
-    - name: etc-cvmfs-default-conf
-      mountPath: /etc/cvmfs/default.local
-      subPath: default.local
-    - name: etc-cvmfs-config-d
-      mountPath: /etc/cvmfs/config.d
+      - name: etc-cvmfs-default-conf
+        mountPath: /etc/cvmfs/default.local
+        subPath: default.local
+      - name: etc-cvmfs-config-d
+        mountPath: /etc/cvmfs/config.d
 
   # automount-runner image and container resources specs.
   singlemount:
@@ -132,6 +132,11 @@ nodeplugin:
     # all Pods that mount CVMFS volumes on that node must be restarted (deleted)
     # too in order to refresh the mounts.
     type: OnDelete
+
+  # Pod-level security context for nodeplugin daemonset.
+  podSecurityContext:
+    seccompProfile:
+      type: RuntimeDefault
 
   # Pod priority class name.
   priorityClassName: system-node-critical
@@ -161,16 +166,18 @@ nodeplugin:
     serviceAccountName: cvmfs-nodeplugin
 
     # Whether to create ServiceAccount in the CVMFS CSI namespace.
-    # If not, and `use` is set to true, it is expected the ServiceAccount is already present.
+    # If not, and `use` is set to true, it is expected the ServiceAccount is
+    # already present.
     create: false
 
     # Whether to use this ServiceAccount in Node plugin DaemonSet.
     use: false
 
 # CSI Controller plugin Deployment configuration.
-# CVMFS CSI supports volume provisioning, however the provisioned volumes only fulfill the role
-# of a reference to CVMFS repositories used inside the CO (e.g. Kubernetes), and are not modifying
-# the CVMFS store in any way.
+#
+# CVMFS CSI supports volume provisioning, however the provisioned volumes only
+# fulfil the role of a reference to CVMFS repositories used inside the CO
+# (e.g. Kubernetes), and are not modifying the CVMFS store in any way.
 controllerplugin:
 
   # Component name. Used as `component` label value
@@ -202,6 +209,11 @@ controllerplugin:
   # Deployment update strategy.
   deploymentStrategySpec:
     type: RollingUpdate
+
+  # Pod-level security context for controllerplugin deployment.
+  podSecurityContext:
+    seccompProfile:
+      type: RuntimeDefault
 
   # Pod priority class name.
   priorityClassName: ""
