@@ -37,7 +37,7 @@ spec:
           resources: {{ toYaml . | nindent 12 }}
           {{- end }}
         - name: controllerplugin
-          image: {{ .Values.controllerplugin.plugin.image.repository }}:{{ .Values.controllerplugin.plugin.image.tag }}
+          image: {{ .Values.controllerplugin.plugin.image.repository }}:{{ .Values.controllerplugin.plugin.image.tag | default .Chart.AppVersion }}
           imagePullPolicy: {{ .Values.controllerplugin.plugin.image.pullPolicy }}
           command: [/csi-cvmfsplugin]
           args:

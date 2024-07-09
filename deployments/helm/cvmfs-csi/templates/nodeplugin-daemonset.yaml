@@ -44,7 +44,7 @@ spec:
           resources: {{ toYaml . | nindent 12 }}
           {{- end }}
         - name: nodeplugin
-          image: {{ .Values.nodeplugin.plugin.image.repository }}:{{ .Values.nodeplugin.plugin.image.tag }}
+          image: {{ .Values.nodeplugin.plugin.image.repository }}:{{ .Values.nodeplugin.plugin.image.tag | default .Chart.AppVersion }}
           command: [/csi-cvmfsplugin]
           args:
             - -v={{ .Values.logVerbosityLevel }}
@@ -95,7 +95,7 @@ spec:
           resources: {{ toYaml . | nindent 12 }}
           {{- end }}
         - name: automount
-          image: {{ .Values.nodeplugin.automount.image.repository }}:{{ .Values.nodeplugin.automount.image.tag }}
+          image: {{ .Values.nodeplugin.automount.image.repository }}:{{ .Values.nodeplugin.automount.image.tag | default .Chart.AppVersion }}
           command: [/automount-runner]
           args:
             - -v={{ .Values.logVerbosityLevel }}
@@ -131,7 +131,7 @@ spec:
           resources: {{ toYaml . | nindent 12 }}
           {{- end }}
         - name: automount-reconciler
-          image: {{ .Values.nodeplugin.automountReconciler.image.repository }}:{{ .Values.nodeplugin.automountReconciler.image.tag }}
+          image: {{ .Values.nodeplugin.automountReconciler.image.repository }}:{{ .Values.nodeplugin.automountReconciler.image.tag | default .Chart.AppVersion }}
           command: [/automount-reconciler]
           args:
             - -v={{ .Values.logVerbosityLevel }}
@@ -155,7 +155,7 @@ spec:
           resources: {{ toYaml . | nindent 12 }}
           {{- end }}
         - name: singlemount
-          image: {{ .Values.nodeplugin.singlemount.image.repository }}:{{ .Values.nodeplugin.singlemount.image.tag }}
+          image: {{ .Values.nodeplugin.singlemount.image.repository }}:{{ .Values.nodeplugin.singlemount.image.tag | default .Chart.AppVersion }}
           command: [/singlemount-runner]
           args:
             - -v={{ .Values.logVerbosityLevel }}
