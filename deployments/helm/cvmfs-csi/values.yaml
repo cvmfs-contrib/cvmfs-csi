@@ -240,6 +240,25 @@ controllerplugin:
     # If not, it is expected they are already present.
     create: true
 
+# Prefetch cvmfs repos on a schedule to keep client cache warm.
+prefetcher:
+  enabled: false
+  image:
+    repository: registry.cern.ch/kubernetes/cvmfs-csi
+    tag: "" # If no tag specified default to Chart AppVersion.
+    pullPolicy: IfNotPresent
+  securityContext:
+    seccompProfile:
+      type: RuntimeDefault
+  # Job names should be unique and confirm to kubernetes resource naming spec.
+  jobs:
+    - name: example-job
+      schedule: "* * * * *"
+      script: |-
+        #!/bin/sh
+        ls /cvmfs/atlas.cern.ch
+
+
 # Log verbosity level.
 # See https://github.com/kubernetes/community/blob/master/contributors/devel/sig-instrumentation/logging.md
 # for description of individual verbosity levels.
