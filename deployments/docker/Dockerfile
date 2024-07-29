@@ -15,6 +15,7 @@ RUN if [[ "${TARGETARCH}" == "amd64" ]]; then \
     https://ecsft.cern.ch/dist/cvmfs/cvmfs-${REL_VERSION}/cvmfs-libs-${PKG_VERSION}.el9.${FRIENDLY_ARCH_NAME}.rpm \
     https://ecsft.cern.ch/dist/cvmfs/cvmfs-${REL_VERSION}/cvmfs-fuse3-${PKG_VERSION}.el9.${FRIENDLY_ARCH_NAME}.rpm \
     https://ecsft.cern.ch/dist/cvmfs/cvmfs-config/cvmfs-config-default-latest.noarch.rpm \
+    cronie \
     && dnf --enablerepo=* clean all \
     && rm -rf /var/cache/yum /var/cache/dnf
 

@@ -97,13 +97,32 @@ nodeplugin:
       pullPolicy: IfNotPresent
     resources: {}
     # Extra volume mounts to append to nodeplugin's
-    # Pod.spec.containers[name="automountReconciler"].volumeMounts.
-    extraVolumeMounts:
+    # Pod.spec.containers[name="automountReconciler"].volumeMounts.value
+    extraVolumeMount:
       - name: etc-cvmfs-default-conf
         mountPath: /etc/cvmfs/default.local
         subPath: default.local
       - name: etc-cvmfs-config-d
         mountPath: /etc/cvmfs/config.d
+
+  # Prefetch cvmfs repos on a schedule to keep client cache warm.
+  prefetcher:
+    enabled: false
+    # Image defines the default image for prefetching jobs.
+    # This can be optionally overridden per prefetch job.
+    image:
+      repository: registry.cern.ch/kubernetes/cvmfs-csi
+      tag: "" # If no tag specified default to Chart AppVersion.
+      pullPolicy: IfNotPresent
+    # Jobs defines the pre-fetching tasks for keeping the client cache warm.
+    jobs:
+      - name: example-job # Names should be unique and confirm to k8s resource naming specification.
+        # image: "" # Optional if not specified defaults to prefetcher.image. Image must include crond.
+        schedule: "* * * * *"
+        script: |-
+          #!/bin/bash
+          echo -e "prefetching atlas.cern.ch"
+          ls /cvmfs/atlas.cern.ch
 
   # automount-runner image and container resources specs.
   singlemount:
@@ -239,27 +258,6 @@ controllerplugin:
     # Whether to create RBACs in the CVMFS CSI namespace.
     # If not, it is expected they are already present.
     create: true
-
-# Prefetch cvmfs repos on a schedule to keep client cache warm.
-prefetcher:
-  enabled: false
-  # Image defines the default image for prefetching jobs.
-  # This can be optionally overridden per prefetch job.
-  image:
-    repository: registry.cern.ch/kubernetes/cvmfs-csi
-    tag: "" # If no tag specified default to Chart AppVersion.
-    pullPolicy: IfNotPresent
-  podSecurityContext:
-    seccompProfile:
-      type: RuntimeDefault
-  # Jobs defines the pre-fetching tasks for keeping the client cache warm.
-  jobs: {}
-    # - name: example-job # Names should be unique and confirm to k8s resource naming specification.
-    #   # image: "" # Optional if not specified defaults to prefetcher.image.
-    #   schedule: "*/10 * * * *"
-    #   script: |-
-    #     #!/bin/sh
-    #     ls /cvmfs/atlas.cern.ch
 
 # Log verbosity level.
 # See https://github.com/kubernetes/community/blob/master/contributors/devel/sig-instrumentation/logging.md

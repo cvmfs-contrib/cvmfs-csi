@@ -1,0 +1,23 @@
+{{ if .Values.nodeplugin.prefetcher.enabled }}
+{{- range .Values.nodeplugin.prefetcher.jobs }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "cvmfs-csi.fullname" $ }}-prefetcher-{{ .name }}
+  labels: 
+    {{- include "cvmfs-csi.common.labels" $ | nindent 4 }}
+    job: {{ .name }}
+data:
+  # Entrypoint for cvmfs-csi prefetcher job mounted at 
+  # /etc/cvmfs-csi/prefetcher/entrypoint.sh.
+  entrypoint.sh: {{ toYaml .script | nindent 4 }}
+
+  # Crontab configuration for entrypoint.sh.
+  cron.d: |
+    SHELL=/bin/bash
+    PATH=/sbin:/bin:/usr/sbin:/usr/bin
+    MAILTO=""
+    {{ .schedule }} "root" bash /etc/cvmfs-csi/prefetcher/entrypoint.sh
+{{- end }}
+{{- end }}
