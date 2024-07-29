@@ -78,12 +78,11 @@ Alternatively, a YAML file that specifies the values of the parameters can be pr
 | `nodeplugin.nodeSelector` | Pod node selector of the nodeplugin DaemonSet.                                                                                            |
 | `nodeplugin.tolerations` | Pod tolerations of the nodeplugin DaemonSet.                                                                                               |
 | `nodeplugin.affinity` | Pod node affinity of the nodeplugin DaemonSet.                                                                                                |
-| `prefetcher.enabled` | Whether to enable CVMFS-CSI prefetching jobs.                                                                                                  |
-| `prefetcher.plugin.image.repository` | Default container image repository for CVMFS CSI prefetching jobs.                                                             |
-| `prefetcher.plugin.image.tag` | Default container image tag for CVMFS CSI prefetching jobs.                                                                           |
-| `prefetcher.plugin.image.pullPolicy` | Pull policy for CVMFS CSI prefetching jobs.                                                                                    |
-| `prefetcher.podSecurityContext` | Pod-level security context for CVMFS-CSI prefetching jobs.                                                                          |
-| `prefetching.jobs` | Defintion of CVMFS-CSI prefetching tasks.                                                                                                        |
+| `nodeplugin.prefetcher.enabled` | Whether to enable CVMFS-CSI prefetching jobs.                                                                                       |
+| `nodeplugin.prefetcher.plugin.image.repository` | Default container image repository for CVMFS CSI prefetching jobs.                                                  |
+| `nodeplugin.prefetcher.plugin.image.tag` | Default container image tag for CVMFS CSI prefetching jobs.                                                                |
+| `nodeplugin.prefetcher.plugin.image.pullPolicy` | Pull policy for CVMFS CSI prefetching jobs.                                                                         |
+| `nodeplugin.prefetching.jobs` | Defintion of CVMFS-CSI prefetching tasks.                                                                                             |
 | `controllerplugin.name` | Component name for controller plugin component. Used as `component` label value and to generate Deployment name.                            |
 | `controllerplugin.podSecurityContext` | Pod-level security context for controllerplugin deployment.                                                                   |
 | `controllerplugin.plugin.image.repository` | Container image repository for CVMFS CSI controller plugin.                                                              |

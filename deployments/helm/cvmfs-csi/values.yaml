@@ -115,14 +115,14 @@ nodeplugin:
       tag: "" # If no tag specified default to Chart AppVersion.
       pullPolicy: IfNotPresent
     # Jobs defines the pre-fetching tasks for keeping the client cache warm.
-    jobs:
-      - name: example-job # Names should be unique and confirm to k8s resource naming specification.
-        # image: "" # Optional if not specified defaults to prefetcher.image. Image must include crond.
-        schedule: "* * * * *"
-        script: |-
-          #!/bin/bash
-          echo -e "prefetching atlas.cern.ch"
-          ls /cvmfs/atlas.cern.ch
+    jobs: {}
+      # - name: example-job # Names should be unique and confirm to k8s resource naming specification.
+      #   # image: "" # Optional if not specified defaults to prefetcher.image. Image must include crond.
+      #   schedule: "* * * * *"
+      #   script: |-
+      #     #!/bin/bash
+      #     echo -e "prefetching atlas.cern.ch"
+      #     ls /cvmfs/atlas.cern.ch
 
   # automount-runner image and container resources specs.
   singlemount:
