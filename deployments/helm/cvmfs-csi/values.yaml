@@ -243,6 +243,8 @@ controllerplugin:
 # Prefetch cvmfs repos on a schedule to keep client cache warm.
 prefetcher:
   enabled: false
+  # Image defines the default image for prefetching jobs.
+  # This can be optionally overridden per prefetch job.
   image:
     repository: registry.cern.ch/kubernetes/cvmfs-csi
     tag: "" # If no tag specified default to Chart AppVersion.
@@ -250,14 +252,14 @@ prefetcher:
   securityContext:
     seccompProfile:
       type: RuntimeDefault
-  # Job names should be unique and confirm to kubernetes resource naming spec.
-  jobs:
-    - name: example-job
-      schedule: "* * * * *"
-      script: |-
-        #!/bin/sh
-        ls /cvmfs/atlas.cern.ch
-
+  # Jobs defines the pre-fetching tasks for keeping the client cache warm.
+  jobs: {}
+    # - name: example-job # Names should be unique and confirm to k8s resource naming specification.
+    #   # image: "" # Optional if not specified defaults to prefetcher.image.
+    #   schedule: "* * * * *"
+    #   script: |-
+    #     #!/bin/sh
+    #     ls /cvmfs/atlas.cern.ch
 
 # Log verbosity level.
 # See https://github.com/kubernetes/community/blob/master/contributors/devel/sig-instrumentation/logging.md
