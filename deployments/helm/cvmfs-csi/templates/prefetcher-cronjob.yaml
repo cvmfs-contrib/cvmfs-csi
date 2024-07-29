@@ -19,7 +19,7 @@ spec:
       template:
         spec:
           restartPolicy: "OnFailure"
-          securityContext: {{ toYaml $.Values.prefetcher.securityContext | nindent 12 }}
+          securityContext: {{ toYaml $.Values.prefetcher.podSecurityContext | nindent 12 }}
           containers:
             - name: prefetcher
               image: {{ .image | default $defaultPrefetchImage }}

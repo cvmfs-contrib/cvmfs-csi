@@ -249,14 +249,14 @@ prefetcher:
     repository: registry.cern.ch/kubernetes/cvmfs-csi
     tag: "" # If no tag specified default to Chart AppVersion.
     pullPolicy: IfNotPresent
-  securityContext:
+  podSecurityContext:
     seccompProfile:
       type: RuntimeDefault
   # Jobs defines the pre-fetching tasks for keeping the client cache warm.
   jobs: {}
     # - name: example-job # Names should be unique and confirm to k8s resource naming specification.
     #   # image: "" # Optional if not specified defaults to prefetcher.image.
-    #   schedule: "* * * * *"
+    #   schedule: "*/10 * * * *"
     #   script: |-
     #     #!/bin/sh
     #     ls /cvmfs/atlas.cern.ch
