@@ -97,8 +97,8 @@ nodeplugin:
       pullPolicy: IfNotPresent
     resources: {}
     # Extra volume mounts to append to nodeplugin's
-    # Pod.spec.containers[name="automountReconciler"].volumeMounts.value
-    extraVolumeMount:
+    # Pod.spec.containers[name="automountReconciler"].volumeMounts.
+    extraVolumeMounts:
       - name: etc-cvmfs-default-conf
         mountPath: /etc/cvmfs/default.local
         subPath: default.local
