@@ -115,7 +115,7 @@ nodeplugin:
       tag: "" # If no tag specified default to Chart AppVersion.
       pullPolicy: IfNotPresent
     # Jobs defines the pre-fetching tasks for keeping the client cache warm.
-    jobs: {}
+    jobs: []
       # - name: example-job # Names should be unique and confirm to k8s resource naming specification.
       #   # image: "" # Optional if not specified defaults to prefetcher.image. Image must include crond.
       #   schedule: "* * * * *"
