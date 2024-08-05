@@ -1,3 +1,5 @@
+{{- $defaultPrefetchImage := printf "%s:%s" $.Values.nodeplugin.prefetcher.image.repository ($.Values.nodeplugin.prefetcher.image.tag | default $.Chart.AppVersion) -}}
+---
 kind: DaemonSet
 apiVersion: apps/v1
 metadata:
@@ -188,6 +190,28 @@ spec:
           {{- with .Values.nodeplugin.singlemount.resources }}
           resources: {{ toYaml . | nindent 12 }}
           {{- end }}
+        {{- if .Values.nodeplugin.prefetcher.enabled }}
+        {{- range .Values.nodeplugin.prefetcher.jobs }}
+        - name: prefetcher-{{ .name }}
+          image: {{ .image | default $defaultPrefetchImage }}
+          # Launch crond with all debug flags (-x).
+          command: ["/usr/sbin/crond", "-n", "-s", "-m", "off", "-x", "load,proc,sch"]
+          securityContext:
+            privileged: true
+          volumeMounts:
+            - name: autofs-root
+              mountPath: /cvmfs
+              mountPropagation: Bidirectional
+            - name: prefetcher-{{ .name }}
+              mountPath: "/etc/crontab"
+              subPath: "cron.d"
+              readOnly: true
+            - name: prefetcher-{{ .name }}
+              mountPath: "/etc/cvmfs-csi/prefetcher/entrypoint.sh"
+              subPath: "entrypoint.sh"
+              readOnly: true
+        {{- end }}
+        {{- end }}
       volumes:
         - name: socket-dir
           hostPath:
@@ -224,6 +248,13 @@ spec:
         {{- if .Values.cache.alien.enabled }}
         - name: cvmfs-aliencache
           {{- toYaml .Values.cache.alien.volumeSpec | nindent 10 }}
+        {{- end }}
+        {{- if .Values.nodeplugin.prefetcher.enabled }}
+        {{- range .Values.nodeplugin.prefetcher.jobs }}
+        - name: prefetcher-{{ .name }}
+          configMap:
+            name: {{ include "cvmfs-csi.fullname" $ }}-prefetcher-{{ .name }}
+        {{- end }}
         {{- end }}
         {{- with .Values.nodeplugin.extraVolumes }}
         {{- toYaml . | nindent 8 }}
