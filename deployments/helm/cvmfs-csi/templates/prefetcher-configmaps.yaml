@@ -19,6 +19,6 @@ data:
     SHELL=/bin/bash
     PATH=/sbin:/bin:/usr/sbin:/usr/bin
     MAILTO=""
-    {{ .schedule }} "bash /etc/cvmfs-csi/prefetcher/entrypoint.sh"
+    {{ .schedule }} root bash /etc/cvmfs-csi/prefetcher/entrypoint.sh
 {{- end }}
 {{- end }}
