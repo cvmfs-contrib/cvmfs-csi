@@ -11,7 +11,8 @@ metadata:
 data:
   # Entrypoint for cvmfs-csi prefetcher job mounted at 
   # /etc/cvmfs-csi/prefetcher/entrypoint.sh.
-  entrypoint.sh: {{ toYaml .script | nindent 4 }}
+  entrypoint.sh: |
+    {{- tpl .script $ | nindent 4 }}
 
   # Crontab configuration for entrypoint.sh.
   cron.d: |
