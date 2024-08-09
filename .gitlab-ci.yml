@@ -48,8 +48,20 @@ build-chart:
     variables:
       PUSH_CHART: "true"
   - if: $CI_COMMIT_BRANCH
+  image: registry.cern.ch/kubernetes/ops:0.4.0
   stage: build-chart
-  extends: .deploy_helm
+  script: |
+    CHART_NAME=cvmfs-csi
+    helm package "deployments/helm/${CHART_NAME}"
+
+    if $PUSH_CHART; then
+      helm registry login registry.cern.ch -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD
+      helm push ${CHART_NAME}-${CI_COMMIT_TAG}.tgz "oci://${REGISTRY_CHART_PATH}"
+
+      echo -n "${HARBOR_SIGNKEY}" | base64 -d > .sign.key
+      cosign login registry.cern.ch -u ${HARBOR_USER} -p ${HARBOR_TOKEN}
+      cosign sign --key .sign.key -y "${DEST}/${CHART_NAME}:${CI_COMMIT_TAG}"
+    fi
   variables:
     REGISTRY_CHART_PATH: registry.cern.ch/kubernetes/charts
     COSIGN_PRIVATE_KEY: "$HARBOR_SIGNKEY"
