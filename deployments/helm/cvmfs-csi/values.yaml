@@ -25,6 +25,17 @@ extraConfigMaps:
       # Whether repositories should share a cache directory or each have their own.
       CVMFS_SHARED_CACHE=no
       {{- end -}}
+  # /etc/cvmfs/default.d/90-local.conf
+  cvmfs-csi-default-d: {}
+  #  90-local.conf: |
+       # This is the OSG configuration file for the CVMFS client.
+       # It will overwride the default configuration file which uses the cern config repo
+  #    CVMFS_SEND_INFO_HEADER=yes
+  #    CVMFS_KEYS_DIR=/etc/cvmfs/keys/opensciencegrid.org
+  #    CVMFS_USE_GEOAPI=yes
+  #    CVMFS_CONFIG_REPOSITORY=config-osg.opensciencegrid.org
+  #    CVMFS_CONFIG_REPO_REQUIRED=yes
+  #    CVMFS_FALLBACK_PROXY="http://cvmfsbproxy.fnal.gov:3126;http://cvmfsbproxy.cern.ch:3126"
 
 # Cache configuration for storing CVMFS client data.
 # CVMFS CSI supports two kinds of caches:
@@ -64,6 +75,9 @@ nodeplugin:
     - name: etc-cvmfs-config-d
       configMap:
         name: cvmfs-csi-config-d
+    - name: etc-cvmfs-default-d
+      configMap:
+        name: cvmfs-csi-default-d
 
   # CVMFS CSI image and container resources specs.
   plugin:
@@ -88,6 +102,9 @@ nodeplugin:
         subPath: default.local
       - name: etc-cvmfs-config-d
         mountPath: /etc/cvmfs/config.d
+      - name: etc-cvmfs-default-d
+        mountPath: /etc/cvmfs/default.d/90-local.conf
+        subPath: 90-local.conf
 
   # automount-reconciler image and container resources specs.
   automountReconciler:
@@ -104,6 +121,9 @@ nodeplugin:
         subPath: default.local
       - name: etc-cvmfs-config-d
         mountPath: /etc/cvmfs/config.d
+      - name: etc-cvmfs-default-d
+        mountPath: /etc/cvmfs/default.d/90-local.conf
+        subPath: 90-local.conf
 
   # Prefetch cvmfs repos on a schedule to keep client cache warm.
   prefetcher:

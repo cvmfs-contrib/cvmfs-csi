@@ -251,11 +251,14 @@ drwxrwxr-x   57 999      997             68 Aug 13 03:43 sw
 
 ## Adding CVMFS repository configuration
 
-All CVMFS client configuration is stored in two ConfigMaps (created in CVMFS CSI's namespace):
+All CVMFS client configuration is stored in three ConfigMaps (created in CVMFS CSI's namespace):
 * ConfigMap `cvmfs-csi-default-local` mounted under `/etc/cvmfs/default.local` file,
 * ConfigMap `cvmfs-csi-config-d` mounted under `/etc/cvmfs/config.d` directory.
+* ConfigMap `cvmfs-csi-default-d` mounted under `/etc/cvmfs/default.d/90-local.conf` directory.
 
 To add or change repository configuration, run `kubectl edit configmap cvmfs-csi-config-d` and edit the ConfigMap items accordingly. Note that it may take some time until the updated ConfigMap contents get propagated to all nodes and CVMFS clients to pick up the new changes.
+
+The `cvmfs-csi-default-d` config map is designed to be used for settings that are only allowed in the default.d/*.conf directory.  For example, the only place that the cern config repo can be overridden is in the default.d directory.
 
 ### Example: adding ilc.desy.de CVMFS repository
 
