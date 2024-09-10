@@ -28,8 +28,8 @@ extraConfigMaps:
   # /etc/cvmfs/default.d/90-local.conf
   cvmfs-csi-default-d: {}
   #  90-local.conf: |
-       # This is the OSG configuration file for the CVMFS client.
-       # It will overwride the default configuration file which uses the cern config repo
+  #    # This is the OSG configuration file for the CVMFS client.
+  #    # It will override the default configuration file which uses the cern config repo
   #    CVMFS_SEND_INFO_HEADER=yes
   #    CVMFS_KEYS_DIR=/etc/cvmfs/keys/opensciencegrid.org
   #    CVMFS_USE_GEOAPI=yes
