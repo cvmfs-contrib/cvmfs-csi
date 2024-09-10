@@ -60,7 +60,7 @@ build-chart:
 
       echo -n "${HARBOR_SIGNKEY}" | base64 -d > .sign.key
       cosign login registry.cern.ch -u ${HARBOR_USER} -p ${HARBOR_TOKEN}
-      cosign sign --key .sign.key -y "${DEST}/${CHART_NAME}:${CI_COMMIT_TAG}"
+      cosign sign --key .sign.key -y "${REGISTRY_CHART_PATH}/${CHART_NAME}:${CI_COMMIT_TAG}"
     fi
   variables:
     REGISTRY_CHART_PATH: registry.cern.ch/kubernetes/charts
