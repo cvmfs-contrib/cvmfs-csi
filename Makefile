@@ -20,6 +20,7 @@ BINDIR           := $(CURDIR)/bin
 DIST_DIRS        := find * -type d -exec
 TARGETS          ?= linux/amd64 linux/arm64
 IMAGE_BUILD_TOOL ?= podman
+IMAGE_ADDITIONAL_ARGS ?=
 GOX_PARALLEL     ?= 3
 
 GOPATH        = $(shell go env GOPATH)
@@ -50,6 +51,7 @@ endif
 BINARY_VERSION ?= ${GIT_TAG}
 
 BASE_PKG = github.com/cvmfs-contrib/cvmfs-csi
+BASE_REPOSITORY ?= registry.cern.ch/kubernetes/cvmfs-csi
 # Only set Version if building a tag or VERSION is set
 ifneq ($(BINARY_VERSION),)
 	LDFLAGS += -X ${BASE_PKG}/internal/version.version=${BINARY_VERSION}
@@ -62,7 +64,8 @@ endif
 LDFLAGS += -X ${BASE_PKG}/internal/version.commit=${GIT_COMMIT}
 LDFLAGS += -X ${BASE_PKG}/internal/version.treestate=${GIT_DIRTY}
 
-IMAGE_TAG := ${GIT_BRANCH}
+# Replaces all "/" in git branch name with "-": docker tags can not contain a "/".
+IMAGE_TAG := $(shell echo $(GIT_BRANCH) | sed 's/\//-/g')
 ifneq ($(GIT_TAG),)
     IMAGE_TAG = ${GIT_TAG}
 endif
@@ -80,7 +83,7 @@ all: build
 # ------------------------------------------------------------------------------
 #  build
 
-build: TARGETS = $(LOCAL_TARGET)
+# build: TARGETS = $(LOCAL_TARGET)
 build: build-cross
 
 $(BINDIR)/csi-cvmfsplugin: $(SRC)
@@ -107,11 +110,12 @@ build-cross: $(GOX) $(SRC)
 #  image
 
 image: build
-	$(IMAGE_BUILD_TOOL) build                                      \
+	$(IMAGE_BUILD_TOOL) build                                    \
 		--build-arg RELEASE=$(IMAGE_TAG)                           \
 		--build-arg GITREF=$(GIT_COMMIT)                           \
 		--build-arg CREATED=$(shell date -u +"%Y-%m-%dT%H:%M:%SZ") \
-		-t registry.cern.ch/kubernetes/cvmfs-csi:$(IMAGE_TAG)      \
+		$(IMAGE_ADDITIONAL_ARGS)                                   \
+		-t $(BASE_REPOSITORY):$(IMAGE_TAG)                         \
 		-f ./deployments/docker/Dockerfile .
 
 # ------------------------------------------------------------------------------
