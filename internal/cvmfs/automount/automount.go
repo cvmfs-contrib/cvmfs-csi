@@ -169,7 +169,7 @@ func setupCvmfs(o *Opts) error {
 			alienCache = DefaultAlienCachePath
 		}
 		// Make sure the volume is writeable by CVMFS processes.
-		if err := os.Chmod(DefaultAlienCachePath, 0o777); err != nil {
+		if err := os.Chmod(alienCache, 0o777); err != nil {
 			return err
 		}
 	}
