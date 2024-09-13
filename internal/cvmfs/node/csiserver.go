@@ -37,6 +37,7 @@ type Server struct {
 	nodeID                    string
 	singlemountRunnerEndpoint string
 	caps                      []*csi.NodeServiceCapability
+	csi.UnimplementedNodeServer
 }
 
 const (

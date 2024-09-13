@@ -29,6 +29,7 @@ import (
 // Server implements csi.ControllerServer interface.
 type Server struct {
 	caps []*csi.ControllerServiceCapability
+	csi.UnimplementedControllerServer
 }
 
 var _ csi.ControllerServer = (*Server)(nil)
