@@ -34,8 +34,14 @@ import (
 
 const (
 	AutofsCvmfsRoot = "/cvmfs"
-	AlienCachePath  = "/cvmfs-aliencache"
-	LocalCachePath  = "/cvmfs-localcache"
+
+	// Default Location of alien cache if not otherwise specified in
+	// default.local cvmfs configuration.
+	DefaultAlienCachePath = "/cvmfs-aliencache"
+
+	// Default Location of local cache if not otherwise specified in
+	// default.local cvmfs configuration.
+	DefaultLocalCachePath = "/cvmfs-localcache"
 )
 
 type Opts struct {
@@ -152,26 +158,29 @@ func readEffectiveDefaultCvmfsConfig() (map[string]string, error) {
 }
 
 func setupCvmfs(o *Opts) error {
-	if o.HasAlienCache {
-		// Make sure the volume is writable by CVMFS processes.
-		if err := os.Chmod(AlienCachePath, 0o777); err != nil {
-			return err
-		}
-	}
-
-	// Clean up local cache. It may be dirty after previous nodeplugin Pod runs.
-
-	log.Debugf("Cleaning up local cache directory %s...", LocalCachePath)
-
 	cvmfsConfig, err := readEffectiveDefaultCvmfsConfig()
 	if err != nil {
 		return fmt.Errorf("failed to read CVMFS config: %v", err)
 	}
 
+	if o.HasAlienCache {
+		alienCache := cvmfsConfig["CVMFS_ALIEN_CACHE"]
+		if alienCache == "" {
+			alienCache = DefaultAlienCachePath
+		}
+		// Make sure the volume is writeable by CVMFS processes.
+		if err := os.Chmod(DefaultAlienCachePath, 0o777); err != nil {
+			return err
+		}
+	}
+
 	cacheDir := cvmfsConfig["CVMFS_CACHE_BASE"]
 	if cacheDir == "" {
-		cacheDir = LocalCachePath
+		cacheDir = DefaultLocalCachePath
 	}
+
+	// Clean up local cache. It may be dirty after previous nodeplugin Pod runs.
+	log.Debugf("Cleaning up local cache directory %s...", cacheDir)
 
 	if err := removeDirContents(cacheDir); err != nil {
 		return fmt.Errorf("failed to clean up local cache directory %s: %v", cacheDir, err)
