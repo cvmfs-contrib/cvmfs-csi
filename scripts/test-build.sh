@@ -24,7 +24,7 @@ BASE_REPOSITORY=$BASE_REPOSITORY \
   make image
 docker push $BASE_REPOSITORY:$IMAGE_TAG
 
-helm install -n cvmfs-csi --create-namespace \
+helm install -n kube-system \
   cvmfs-csi \
   ./deployments/helm/cvmfs-csi/ \
   --set controllerplugin.plugin.image.repository=$BASE_REPOSITORY \
@@ -38,4 +38,5 @@ helm install -n cvmfs-csi --create-namespace \
   --set nodeplugin.prefetcher.image.repository=$BASE_REPOSITORY \
   --set nodeplugin.prefetcher.image.tag=$IMAGE_TAG \
   --set nodeplugin.singlemount.image.repository=$BASE_REPOSITORY \
-  --set nodeplugin.singlemount.image.tag=$IMAGE_TAG
+  --set nodeplugin.singlemount.image.tag=$IMAGE_TAG \
+  --set automountStorageClass.create=true
