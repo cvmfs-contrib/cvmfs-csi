@@ -1,3 +1,5 @@
+# cvmfs-csi
+
 A Helm chart for the CVMFS-CSI driver, allowing the mounting of CVMFS repositories in Kubernetes environments. This chart will deploy the CSI driver as a DaemonSet, thus automatically scaling the driver on each cluster node.
 
 ## Usage
@@ -47,9 +49,11 @@ Alternatively, a YAML file that specifies the values of the parameters can be pr
 | `cvmfsConfig."config.d".use` | Whether to use this ConfigMap in /etc/cvmfs/config.d.                                                                                  |
 | `cvmfsConfig."config.d".create` | Whether to create config.d ConfigMap. If not, and `use` is set to true, it is expected the ConfigMap is already present.            |
 | `cvmfsConfig."config.d".data` | config.d ConfigMap contents to use when `create` is set to true.                                                                      |
+| `cache.local.location` | Location of the local cvmfs cache i.e. `CVMFS_CACHE_BASE`.
 | `cache.local.volumeSpec` | Volume spec for local cache. ReadWriteOnce access mode for persistent volumes is sufficient.                                               |
 | `cache.local.cvmfsQuotaLimit` | Maximum size of local cache in MiB. CVMFS client will garbage collect the exceeding amount.                                           |
 | `cache.alien.enabled` | Whether to use alien cache in deployment.                                                                                                     |
+| `cache.alien.location` | Location of the alien cvmfs cache if enabled i.e. `CVMFS_ALIEN_CACHE`.
 | `cache.alien.volumeSpec` | Volume spec for local cache. ReadWriteMany access mode for persistent volumes is required.                                                 |
 | `nodeplugin.name` | Component name for node plugin component. Used as `component` label value and to generate DaemonSet name.                                         |
 | `nodeplugin.plugin.image.repository` | Container image repository for CVMFS CSI node plugin.                                                                          |
