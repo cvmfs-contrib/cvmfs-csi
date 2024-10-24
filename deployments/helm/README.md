@@ -17,7 +17,7 @@ helm install cvmfs-csi oci://registry.cern.ch/kubernetes/charts/cvmfs-csi --vers
 
 To use this Helm chart, clone this repository and install the chart:
 ```
-git clone https://github.com/cvmfs-contrib/cvmfs-csi
+git clone https://github.com/tkalp/cvmfs-csi
 ```
 
 Helm v2 installation:
