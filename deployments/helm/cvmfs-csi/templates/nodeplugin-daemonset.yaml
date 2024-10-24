@@ -76,7 +76,7 @@ spec:
               mountPath: {{ .Values.kubeletDirectory }}/plugins
               mountPropagation: Bidirectional
             - name: pods-mount-dir
-              mountPath: /var/lib/kubelet/pods
+              mountPath: {{ .Values.kubeletDirectory }}/pods
               mountPropagation: Bidirectional
             - name: runtime-metadata
               mountPath: /var/lib/cvmfs.csi.cern.ch
