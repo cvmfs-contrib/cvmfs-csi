@@ -79,7 +79,7 @@ func CombinedOutput(cmd *exec.Cmd) ([]byte, error) {
 
 func RunAndLogCombined(cmd *exec.Cmd) error {
 	return RunAndDoCombined(cmd, func(execID uint64, line string) {
-		log.Infof(FmtLogMsg(execID, line))
+		log.Infof("%s", FmtLogMsg(execID, line))
 	})
 }
 
