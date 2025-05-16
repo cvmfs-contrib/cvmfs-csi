@@ -56,7 +56,8 @@ build-chart:
 
     if $PUSH_CHART; then
       helm registry login registry.cern.ch -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD
-      helm push ${CHART_NAME}-${CI_COMMIT_TAG}.tgz "oci://${REGISTRY_CHART_PATH}"
+      CHART_VERSION=${CI_COMMIT_TAG#v} # strip version prefix from chart.
+      helm push ${CHART_NAME}-${CHART_VERSION}.tgz "oci://${REGISTRY_CHART_PATH}"
 
       echo -n "${HARBOR_SIGNKEY}" | base64 -d > .sign.key
       cosign login registry.cern.ch -u ${HARBOR_USER} -p ${HARBOR_TOKEN}
