@@ -28,6 +28,7 @@ import (
 type Server struct {
 	driverName string
 	caps       []*csi.PluginCapability
+	csi.UnimplementedIdentityServer
 }
 
 var _ csi.IdentityServer = (*Server)(nil)

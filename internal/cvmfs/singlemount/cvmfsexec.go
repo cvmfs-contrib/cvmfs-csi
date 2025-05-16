@@ -135,7 +135,7 @@ func runCvmfs2AndTryCaptureErr(arg ...string) error {
 				return
 			}
 
-			log.Infof(exec.FmtLogMsg(execID, line))
+			log.Infof("%s", exec.FmtLogMsg(execID, line))
 
 			logRing.Value = line
 			logRing = logRing.Next()

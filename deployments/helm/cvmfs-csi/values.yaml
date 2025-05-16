@@ -13,13 +13,13 @@ extraConfigMaps:
       CVMFS_USE_GEOAPI=yes
       CVMFS_HTTP_PROXY="http://ca-proxy.cern.ch:3128"
 
-      # It is advised to change these configs in the cache section of the helm values
-      # and leave them unchanged here, so they auto-generate.
+      # It is advised to change these configurations in the cache section of
+      # the helm values and leave them unchanged here, so they auto-generate.
       CVMFS_QUOTA_LIMIT={{ .Values.cache.local.cvmfsQuotaLimit }}
-      CVMFS_CACHE_BASE=/cvmfs-localcache
+      CVMFS_CACHE_BASE={{ .Values.cache.local.location }}
 
       {{- if .Values.cache.alien.enabled }}
-      CVMFS_ALIEN_CACHE=/cvmfs-aliencache
+      CVMFS_ALIEN_CACHE={{ .Values.cache.alien.location }}
       # When alien cache is used, CVMFS does not control the size of the cache.
       CVMFS_QUOTA_LIMIT=-1
       # Whether repositories should share a cache directory or each have their own.
@@ -46,6 +46,7 @@ extraConfigMaps:
 #   https://cvmfs.readthedocs.io/en/stable/cpt-configure.html#alien-cache
 cache:
   local:
+    location: /cvmfs-localcache
     volumeSpec:
       hostPath:
         path: /var/lib/cvmfs.csi.cern.ch/cache
@@ -55,6 +56,7 @@ cache:
     cvmfsQuotaLimit: 1000
   alien:
     enabled: false
+    location: /cvmfs-aliencache
     volumeSpec:
       persistentVolumeClaim:
         claimName: cvmfs-alien-cache

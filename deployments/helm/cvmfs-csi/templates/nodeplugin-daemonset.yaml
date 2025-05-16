@@ -121,10 +121,10 @@ spec:
               mountPath: /cvmfs
               mountPropagation: Bidirectional
             - name: cvmfs-localcache
-              mountPath: /cvmfs-localcache
+              mountPath: {{ .Values.cache.local.location }}
             {{- if .Values.cache.alien.enabled }}
             - name: cvmfs-aliencache
-              mountPath: /cvmfs-aliencache
+              mountPath: {{ .Values.cache.alien.location }}
             {{- end }}
             {{- with .Values.nodeplugin.automount.extraVolumeMounts }}
             {{- toYaml . | nindent 12 }}
@@ -149,7 +149,7 @@ spec:
               mountPath: /cvmfs
               mountPropagation: Bidirectional
             - name: cvmfs-localcache
-              mountPath: /cvmfs-localcache
+              mountPath: {{ .Values.cache.local.location }}
             {{- with .Values.nodeplugin.automountReconciler.extraVolumeMounts }}
             {{- toYaml . | nindent 12 }}
             {{- end }}

@@ -1,0 +1,65 @@
+name: ci-test-golang
+on:
+  push:
+    branches:
+      - "*"
+  pull_request:
+    branches:
+      - "master"
+  # Allows for manual triggers using the `gh` CLI.
+  workflow_dispatch:
+env:
+  GO_VERSION: "1.24"
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Install dependencies
+        run: go mod download
+
+      - name: Run go vet
+        run: go vet ./...
+
+      - name: Run go test
+        run: go test ./... -json > test-results.json
+
+      - name: Publish test results
+        uses: actions/upload-artifact@v4
+        with:
+          name: go-results
+          path: test-results.json
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Verify go mod tidy has been run
+        run: |
+          set -e
+          go mod tidy
+          if [ ! -z "$(git status --porcelain go.mod go.sum)" ]; then
+              >&2 echo "Running go mod tidy modified go.mod and/or go.sum"
+              exit 1
+          fi
+
+      - name: Verify gofumpt has been run
+        run: |
+          set -e
+          go install mvdan.cc/gofumpt@latest
+          gofumpt -l -w .
+          if [ ! -z "$(git status --porcelain .)" ]; then
+              >&2 echo "Running gofumpt modified source code"
+              exit 1
+          fi
