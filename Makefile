@@ -83,7 +83,7 @@ all: build
 # ------------------------------------------------------------------------------
 #  build
 
-# build: TARGETS = $(LOCAL_TARGET)
+build: TARGETS = $(LOCAL_TARGET)
 build: build-cross
 
 $(BINDIR)/csi-cvmfsplugin: $(SRC)
