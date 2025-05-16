@@ -369,7 +369,7 @@ func RunBlocking() error {
 	cmd.Wait()
 
 	if !exitedWithSigTerm.Load() && cmd.ProcessState.ExitCode() != 0 {
-		log.Fatalf(fmt.Sprintf("automount[%d] has exited unexpectedly: %s", cmd.Process.Pid, cmd.ProcessState))
+		log.Fatalf("%s", fmt.Sprintf("automount[%d] has exited unexpectedly: %s", cmd.Process.Pid, cmd.ProcessState))
 	}
 
 	log.Infof("automount[%d] has exited: %s", cmd.Process.Pid, cmd.ProcessState)
