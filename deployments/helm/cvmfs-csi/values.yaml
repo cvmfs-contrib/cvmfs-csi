@@ -1,6 +1,9 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
+# Sets CVMFS_HTTP_PROXY in default.local.
+cmvfsHttpProxy: "http://ca-proxy.cern.ch:3128"
+
 # Extra ConfigMaps to create and manage by the chart release.
 # These can be used e.g. when defining CVMFS client configuration.
 # ConfigMap data supports go-template expressions.
@@ -11,7 +14,7 @@ extraConfigMaps:
   cvmfs-csi-default-local:
     default.local: |
       CVMFS_USE_GEOAPI=yes
-      CVMFS_HTTP_PROXY="http://ca-proxy.cern.ch:3128"
+      CVMFS_HTTP_PROXY={{ .Values.cmvfsHttpProxy }}
 
       # It is advised to change these configurations in the cache section of
       # the helm values and leave them unchanged here, so they auto-generate.
