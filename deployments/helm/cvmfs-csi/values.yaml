@@ -215,6 +215,33 @@ nodeplugin:
     # Whether to use this ServiceAccount in Node plugin DaemonSet.
     use: false
 
+
+  # Should a networkPolicy be generated for the nodeplugin
+  networkPolicy:
+    enabled: false
+    # no ingress is required for this service
+    ingress: []
+    # The minimum egress ports required to function are:
+    #   DNS (53/udp, 53/tcp)
+    #   HTTP and HTTPS servers (DIRECT)
+    #   Your proxy server ports maybe:
+    #     1080/tcp is SOCKS5
+    #     3128/tcp is Squid
+    egress:
+    - ports:
+      - port: 80
+        protocol: TCP
+      - port: 443
+        protocol: TCP
+      - port: 53
+        protocol: TCP
+      - port: 53
+        protocol: UDP
+      - port: 1080
+        protocol: TCP
+      - port: 3128
+        protocol: TCP
+
 # CSI Controller plugin Deployment configuration.
 #
 # CVMFS CSI supports volume provisioning, however the provisioned volumes only
@@ -283,6 +310,27 @@ controllerplugin:
     # Whether to create RBACs in the CVMFS CSI namespace.
     # If not, it is expected they are already present.
     create: true
+
+  # Should a networkPolicy be generated for the controller
+  networkPolicy:
+    enabled: false
+    # no ingress is required for this service
+    ingress: []
+    # The minimum egress ports required to function are:
+    #   DNS (53/udp, 53/tcp)
+    #   API server (80/tcp, 443/tcp, 6443/tcp) NOTE: OKD and Openshift use 6443/tcp
+    egress:
+    - ports:
+      - port: 80
+        protocol: TCP
+      - port: 443
+        protocol: TCP
+      - port: 53
+        protocol: TCP
+      - port: 53
+        protocol: UDP
+      - port: 6443
+        protocol: TCP
 
 # Log verbosity level.
 # See https://github.com/kubernetes/community/blob/master/contributors/devel/sig-instrumentation/logging.md

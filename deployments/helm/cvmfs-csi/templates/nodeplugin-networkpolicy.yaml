@@ -1,0 +1,21 @@
+{{- if .Values.nodeplugin.networkPolicy.enabled -}}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "cvmfs-csi.nodeplugin.fullname" . }}
+spec:
+  egress:
+    {{- with .Values.nodeplugin.networkPolicy.egress }}
+      {{- toYaml . | nindent 4 }}
+    {{- end }}
+  ingress:
+    {{- with .Values.nodeplugin.networkPolicy.ingress }}
+      {{- toYaml . | nindent 4 }}
+    {{- end }}
+  podSelector:
+    matchLabels:
+      {{- include "cvmfs-csi.nodeplugin.matchLabels" .  | nindent 6 }}
+  policyTypes:
+  - Egress
+  - Ingress
+{{- end }}
