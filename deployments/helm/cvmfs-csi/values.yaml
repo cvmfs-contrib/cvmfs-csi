@@ -233,6 +233,9 @@ controllerplugin:
 
   extraVolumes: []
 
+  # Extra containers to be appended to controllerPlugin's Pod.spec.containers.
+  extraContainers: []
+
   # CVMFS CSI image and container resources specs.
   plugin:
     image:

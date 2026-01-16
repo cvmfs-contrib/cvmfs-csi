@@ -57,6 +57,9 @@ spec:
           {{- with .Values.controllerplugin.plugin.resources }}
           resources: {{ toYaml . | nindent 12 }}
           {{- end }}
+        {{- with .Values.controllerplugin.extraContainers }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
       volumes:
         - name: socket-dir
           emptyDir: {}
