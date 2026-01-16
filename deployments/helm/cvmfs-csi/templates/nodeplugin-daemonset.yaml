@@ -18,6 +18,8 @@ spec:
     spec:
       # hostPID is required for autofs to work.
       hostPID: {{ .Values.nodeplugin.hostPID }}
+      # hostUsers is required for autofs to work.
+      hostUsers: {{ .Values.nodeplugin.hostUsers }}
       {{- with .Values.nodeplugin.podSecurityContext }}
       securityContext: {{ toYaml . | nindent 8 }}
       {{- end }}
@@ -38,6 +40,8 @@ spec:
             - name: KUBELET_CSI_REGISTRATION_PATH
               value: {{ .Values.kubeletDirectory }}/plugins/{{ .Values.csiDriverName }}/{{ .Values.cvmfsCSIPluginSocketFile }}
           volumeMounts:
+            - name: tmp
+              mountPath: /tmp
             - name: socket-dir
               mountPath: /csi
             - name: registration-dir
@@ -45,6 +49,12 @@ spec:
           {{- with .Values.nodeplugin.registrar.resources }}
           resources: {{ toYaml . | nindent 12 }}
           {{- end }}
+          securityContext:
+            privileged: false
+            capabilities:
+              drop: ["ALL"]
+            allowPrivilegeEscalation: false
+            runAsNonRoot: false
         - name: nodeplugin
           image: {{ .Values.nodeplugin.plugin.image.repository }}:{{ .Values.nodeplugin.plugin.image.tag | default .Chart.AppVersion }}
           command: [/csi-cvmfsplugin]
@@ -61,7 +71,9 @@ spec:
             privileged: true
             capabilities:
               add: ["SYS_ADMIN"]
+              drop: ["ALL"]
             allowPrivilegeEscalation: true
+            runAsNonRoot: false
           env:
             - name: NODE_ID
               valueFrom:
@@ -72,6 +84,8 @@ spec:
             - name: CSI_DRIVERNAME
               value: {{ .Values.csiDriverName }}
           volumeMounts:
+            - name: tmp
+              mountPath: /tmp
             - name: plugins-dir
               mountPath: {{ .Values.kubeletDirectory }}/plugins
               mountPropagation: Bidirectional
@@ -108,8 +122,12 @@ spec:
             privileged: true
             capabilities:
               add: ["SYS_ADMIN"]
+              drop: ["ALL"]
             allowPrivilegeEscalation: true
+            runAsNonRoot: false
           volumeMounts:
+            - name: tmp
+              mountPath: /tmp
             - mountPath: /sys
               name: host-sys
             - name: lib-modules
@@ -143,8 +161,12 @@ spec:
             privileged: true
             capabilities:
               add: ["SYS_ADMIN"]
+              drop: ["ALL"]
             allowPrivilegeEscalation: true
+            runAsNonRoot: false
           volumeMounts:
+            - name: tmp
+              mountPath: /tmp
             - name: autofs-root
               mountPath: /cvmfs
               mountPropagation: Bidirectional
@@ -167,8 +189,12 @@ spec:
             privileged: true
             capabilities:
               add: ["SYS_ADMIN"]
+              drop: ["ALL"]
             allowPrivilegeEscalation: true
+            runAsNonRoot: false
           volumeMounts:
+            - name: tmp
+              mountPath: /tmp
             - name: plugins-dir
               mountPath: {{ .Values.kubeletDirectory }}/plugins
               mountPropagation: Bidirectional
@@ -198,7 +224,14 @@ spec:
           command: ["/usr/sbin/crond", "-n", "-s", "-m", "off", "-x", "load,proc,sch"]
           securityContext:
             privileged: true
+            capabilities:
+              add: ["SYS_ADMIN"]
+              drop: ["ALL"]
+            allowPrivilegeEscalation: true
+            runAsNonRoot: false
           volumeMounts:
+            - name: tmp
+              mountPath: /tmp
             - name: autofs-root
               mountPath: /cvmfs
               mountPropagation: Bidirectional
@@ -213,6 +246,9 @@ spec:
         {{- end }}
         {{- end }}
       volumes:
+        - name: tmp
+          emptyDir:
+            sizeLimit: 265Mi
         - name: socket-dir
           hostPath:
             path: {{ .Values.kubeletDirectory }}/plugins/{{ .Values.csiDriverName }}
@@ -238,7 +274,8 @@ spec:
           hostPath:
             path: /dev
         - name: runtime-metadata
-          emptyDir: {}
+          emptyDir:
+            sizeLimit: 1Gi
         - name: autofs-root
           hostPath:
             path: {{ .Values.automountHostPath }}
