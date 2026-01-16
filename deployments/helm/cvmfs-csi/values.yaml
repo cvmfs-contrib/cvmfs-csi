@@ -84,6 +84,9 @@ nodeplugin:
       configMap:
         name: cvmfs-csi-default-d
 
+  # Extra containers to be appended to nodeplugin's Pod.spec.containers.
+  extraContainers: []
+
   # CVMFS CSI image and container resources specs.
   plugin:
     image:

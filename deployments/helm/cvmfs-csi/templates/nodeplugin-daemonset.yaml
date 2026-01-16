@@ -212,6 +212,9 @@ spec:
               readOnly: true
         {{- end }}
         {{- end }}
+        {{- with .Values.nodeplugin.extraContainers }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
       volumes:
         - name: socket-dir
           hostPath:
