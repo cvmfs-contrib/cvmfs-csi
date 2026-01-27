@@ -87,6 +87,9 @@ nodeplugin:
   # Extra containers to be appended to nodeplugin's Pod.spec.containers.
   extraContainers: []
 
+  # Extra containers to be appended to nodeplugin's Pod.spec.initContainers.
+  extraInitContainers: []
+
   # CVMFS CSI image and container resources specs.
   plugin:
     image:
@@ -235,6 +238,9 @@ controllerplugin:
 
   # Extra containers to be appended to controllerPlugin's Pod.spec.containers.
   extraContainers: []
+
+  # Extra containers to be appended to controllerPlugin's Pod.spec.initContainers.
+  extraInitContainers: []
 
   # CVMFS CSI image and container resources specs.
   plugin:
