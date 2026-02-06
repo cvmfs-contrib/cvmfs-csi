@@ -22,7 +22,7 @@ spec:
       securityContext: {{ toYaml . | nindent 8 }}
       {{- end }}
       {{- if .Values.nodeplugin.serviceAccount.use }}
-      serviceAccount: {{ include "cvmfs-csi.serviceAccountName.nodeplugin" . }}
+      serviceAccountName: {{ include "cvmfs-csi.serviceAccountName.nodeplugin" . }}
       {{- end }}
       containers:
         - name: registrar
