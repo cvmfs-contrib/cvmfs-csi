@@ -1,8 +1,8 @@
-FROM registry.access.redhat.com/ubi9/ubi:9.6-1745489786
+FROM registry.access.redhat.com/ubi9/ubi:9.7-1770238273
 
 ARG TARGETARCH
-ARG REL_VERSION=2.12.7
-ARG PKG_VERSION=2.12.7-1
+ARG REL_VERSION=2.13.3
+ARG PKG_VERSION=2.13.3-1
 
 RUN if [[ "${TARGETARCH}" == "amd64" ]]; then \
     export FRIENDLY_ARCH_NAME="x86_64" ; \
