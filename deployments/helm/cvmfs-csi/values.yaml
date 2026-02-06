@@ -164,7 +164,7 @@ nodeplugin:
   registrar:
     image:
       repository: registry.k8s.io/sig-storage/csi-node-driver-registrar
-      tag: v2.10.1
+      tag: v2.15.0
       pullPolicy: IfNotPresent
     resources: {}
 
@@ -215,7 +215,6 @@ nodeplugin:
     # Whether to use this ServiceAccount in Node plugin DaemonSet.
     use: false
 
-
   # Should a networkPolicy be generated for the nodeplugin
   networkPolicy:
     enabled: false
@@ -228,19 +227,19 @@ nodeplugin:
     #     1080/tcp is SOCKS5
     #     3128/tcp is Squid
     egress:
-    - ports:
-      - port: 80
-        protocol: TCP
-      - port: 443
-        protocol: TCP
-      - port: 53
-        protocol: TCP
-      - port: 53
-        protocol: UDP
-      - port: 1080
-        protocol: TCP
-      - port: 3128
-        protocol: TCP
+      - ports:
+          - port: 80
+            protocol: TCP
+          - port: 443
+            protocol: TCP
+          - port: 53
+            protocol: TCP
+          - port: 53
+            protocol: UDP
+          - port: 1080
+            protocol: TCP
+          - port: 3128
+            protocol: TCP
 
 # CSI Controller plugin Deployment configuration.
 #
@@ -270,7 +269,7 @@ controllerplugin:
   provisioner:
     image:
       repository: registry.k8s.io/sig-storage/csi-provisioner
-      tag: v4.0.1
+      tag: v6.1.0
       pullPolicy: IfNotPresent
     resources: {}
 
@@ -320,17 +319,17 @@ controllerplugin:
     #   DNS (53/udp, 53/tcp)
     #   API server (80/tcp, 443/tcp, 6443/tcp) NOTE: OKD and Openshift use 6443/tcp
     egress:
-    - ports:
-      - port: 80
-        protocol: TCP
-      - port: 443
-        protocol: TCP
-      - port: 53
-        protocol: TCP
-      - port: 53
-        protocol: UDP
-      - port: 6443
-        protocol: TCP
+      - ports:
+          - port: 80
+            protocol: TCP
+          - port: 443
+            protocol: TCP
+          - port: 53
+            protocol: TCP
+          - port: 53
+            protocol: UDP
+          - port: 6443
+            protocol: TCP
 
 # Log verbosity level.
 # See https://github.com/kubernetes/community/blob/master/contributors/devel/sig-instrumentation/logging.md
