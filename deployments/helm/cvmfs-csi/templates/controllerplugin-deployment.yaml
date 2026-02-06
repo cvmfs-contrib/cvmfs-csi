@@ -71,12 +71,12 @@ spec:
           {{- with .Values.controllerplugin.plugin.resources }}
           resources: {{ toYaml . | nindent 12 }}
           {{- end }}
+        {{- with .Values.controllerplugin.securityContext }}
+          securityContext: {{ toYaml . | nindent 12 }}
+        {{- end }}
         {{- with .Values.controllerplugin.extraContainers }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
-        {{- with .Values.controllerplugin.securityContext }}
-          securityContext: {{ toYaml . | nindent 12 }}
-          {{- end }}
       volumes:
         - name: tmp
           emptyDir:
