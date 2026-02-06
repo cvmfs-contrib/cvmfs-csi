@@ -205,6 +205,9 @@ nodeplugin:
   # more details).
   hostPID: true
 
+  # hostUsers must be enabled for automounts to work.
+  hostUsers: true
+
   # (deprecated) ServiceAccount to use with Node plugin DaemonSet.
   # New CVMFS CSI deployments do not need this. It is only necessary
   # when upgrading from v1 of the driver.
@@ -289,10 +292,25 @@ controllerplugin:
   deploymentStrategySpec:
     type: RollingUpdate
 
+  # Control use of user namespaces for controllerplugin deployment.
+  hostUsers: true
+
   # Pod-level security context for controllerplugin deployment.
   podSecurityContext:
     seccompProfile:
       type: RuntimeDefault
+
+  # Container-level security context for controllerplugin deployment.
+  securityContext:
+    readOnlyRootFilesystem: true
+    runAsUser: 12357
+    runAsGroup: 12357
+    runAsNonRoot: true
+    allowPrivilegeEscalation: false
+    privileged: false
+    capabilities:
+      drop:
+        - ALL
 
   # Pod priority class name.
   priorityClassName: ""
