@@ -1,30 +1,26 @@
 # Deploying CVMFS CSI driver in Kubernetes
 
-CVMFS CSI deployment consists of a DaemonSet node plugin that handles node local mount-unmount operations, and ConfigMaps storing CVMFS client configuration.
+CVMFS CSI deployment consists of a DaemonSet node plugin that handles node local mount-unmount operations, and ConfigMaps storing CVMFS client configuration. This repository provides deployment configuration through the CVMFS CSI Helm chart.
 
-Cluster administrators may deploy CVMFS CSI manually using the provided Kubernetes manifests, or by installing cvmfs-csi Helm chart.
+Cluster administrators can install the chart from the CERN OCI registry or directly from a checkout of this repository.
 
 After successful deployment, you can try examples in [../example/](../example/).
 
-## Manual deployment using manifests
+## Deployment
 
-Kubernetes manifests are located in [../deployments/kubernetes](../deployments/kubernetes). They define a node plugin DaemonSet, controller plugin Deployment, ConfigMaps and a CSIDriver object. Deploy them using the following command:
-
-```bash
-kubectl create -f deployments/kubernetes
-```
-
-You may need to customize `cvmfs-csi-default-local` and `cvmfs-csi-config-d` ConfigMaps defined in [../deployments/kubernetes/configmap-cvmfs-client.yaml](../deployments/kubernetes/cvmfs-client-configmap.yaml) to suite your CVMFS environment.
-
-## Deployment with Helm chart
-
-Helm chart can be installed from CERN registry:
+The Helm chart can be installed from the CERN OCI registry:
 
 ```bash
 helm install cvmfs-csi oci://registry.cern.ch/kubernetes/charts/cvmfs-csi --version <Chart tag>
 ```
 
-Some chart values may need to be customized to suite your CVMFS environment. Please consult the documentation in [../deployments/helm/README.md](../deployments/helm/README.md) to see available values.
+Some chart values may need to be customized to suit your CVMFS environment. Please consult the documentation in [../deployments/helm/README.md](../deployments/helm/README.md) to see available values.
+
+To install the chart from a local checkout instead, run:
+
+```bash
+helm install cvmfs-csi ./deployments/helm/cvmfs-csi
+```
 
 ## Verifying the deployment
 
